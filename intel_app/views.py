@@ -156,7 +156,7 @@ def airtel_tigo(request):
         print("===========================")
         print(phone_number)
         print(bundle)
-        send_bundle_response = helper.send_bundle(request.user, phone_number, bundle, payment_reference)
+        send_bundle_response = helper.send_bundle(request.user, phone_number, bundle, reference)
         data = send_bundle_response.json()
 
         print(data)
