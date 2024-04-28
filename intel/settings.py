@@ -30,7 +30,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
-    'danwel-mgusi.ondigitalocean.app'
+    'danwel-mgusi.ondigitalocean.app',
+    'www.danwelstoregh.com'
 ]
 
 
