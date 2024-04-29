@@ -1402,6 +1402,38 @@ a.text-dark:hover, a.text-dark:focus {
   border-radius: 30px;
 }
 
+.tigo-banner {
+  position: relative;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  height: 320px;
+  background-image: linear-gradient(to right, #1F3C76, #EC1F26);
+  color: #645F88;
+  border-radius: 30px;
+}
+
+
+.mtn-banner {
+  position: relative;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  height: 320px;
+  background-image: linear-gradient(to right, #040000, #FFCB00);
+  color: #645F88;
+  border-radius: 30px;
+}
+
+.telecel-banner {
+  position: relative;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  height: 320px;
+  background-image: linear-gradient(to right, #ffffff, #E52325);
+  color: #645F88;
+  border-radius: 30px;
+}
+
+
 .page-banner.home-banner {
   margin-top: 100px;
   height: auto;
