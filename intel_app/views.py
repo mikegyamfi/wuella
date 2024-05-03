@@ -39,9 +39,14 @@ def pay_with_wallet(request):
         print(phone_number)
         print(amount)
         print(reference)
-        bundle = models.IshareBundlePrice.objects.get(
-            price=float(amount)).bundle_volume if user.status == "User" else models.AgentIshareBundlePrice.objects.get(
-            price=float(amount)).bundle_volume
+        if user.status == "User":
+            bundle = models.IshareBundlePrice.objects.get(price=float(amount)).bundle_volume
+        elif user.status == "Agent":
+            bundle = models.AgentIshareBundlePrice.objects.get(price=float(amount)).bundle_volume
+        elif user.status == "Super Agent":
+            bundle = models.SuperAgentIshareBundlePrice.objects.get(price=float(amount)).bundle_volume
+        else:
+            bundle = models.IshareBundlePrice.objects.get(price=float(amount)).bundle_volume
 
         print(bundle)
         send_bundle_response = helper.send_bundle(request.user, phone_number, bundle, reference)
@@ -263,9 +268,14 @@ def mtn_pay_with_wallet(request):
         elif user.wallet <= 0 or user.wallet < float(amount):
             return JsonResponse(
                 {'status': f'Your wallet balance is low. Contact the admin to recharge. Admin Contact Info: 0{admin}'})
-        bundle = models.MTNBundlePrice.objects.get(
-            price=float(amount)).bundle_volume if user.status == "User" else models.AgentMTNBundlePrice.objects.get(
-            price=float(amount)).bundle_volume
+        if user.status == "User":
+            bundle = models.MTNBundlePrice.objects.get(price=float(amount)).bundle_volume
+        elif user.status == "Agent":
+            bundle = models.AgentMTNBundlePrice.objects.get(price=float(amount)).bundle_volume
+        elif user.status == "Super Agent":
+            bundle = models.SuperAgentMTNBundlePrice.objects.get(price=float(amount)).bundle_volume
+        else:
+            bundle = models.MTNBundlePrice.objects.get(price=float(amount)).bundle_volume
         print(bundle)
         sms_message = f"An order has been placed. {bundle}MB for {phone_number}"
         new_mtn_transaction = models.MTNTransaction.objects.create(
@@ -310,9 +320,14 @@ def telecel_pay_with_wallet(request):
             return JsonResponse({'status': f'Your wallet balance is low. Contact the admin to recharge.'})
         elif user.wallet <= 0 or user.wallet < float(amount):
             return JsonResponse({'status': f'Your wallet balance is low. Contact the admin to recharge.'})
-        bundle = models.TelecelBundlePrice.objects.get(
-            price=float(amount)).bundle_volume if user.status == "User" else models.AgentTelecelBundlePrice.objects.get(
-            price=float(amount)).bundle_volume
+        if user.status == "User":
+            bundle = models.TelecelBundlePrice.objects.get(price=float(amount)).bundle_volume
+        elif user.status == "Agent":
+            bundle = models.AgentTelecelBundlePrice.objects.get(price=float(amount)).bundle_volume
+        elif user.status == "Super Agent":
+            bundle = models.SuperAgentTelecelBundlePrice.objects.get(price=float(amount)).bundle_volume
+        else:
+            bundle = models.TelecelBundlePrice.objects.get(price=float(amount)).bundle_volume
 
         print(bundle)
         sms_message = f"An order has been placed. {bundle}MB for {phone_number}"
@@ -358,6 +373,8 @@ def big_time_pay_with_wallet(request):
             bundle = models.AgentBigTimeBundlePrice.objects.get(price=float(amount)).bundle_volume
         elif user.status == "Super Agent":
             bundle = models.SuperAgentBigTimeBundlePrice.objects.get(price=float(amount)).bundle_volume
+        else:
+            bundle = models.BigTimeBundlePrice.objects.get(price=float(amount)).bundle_volume
         print(bundle)
         new_mtn_transaction = models.BigTimeTransaction.objects.create(
             user=request.user,

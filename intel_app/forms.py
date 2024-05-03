@@ -30,8 +30,8 @@ class IShareBundleForm(forms.Form):
             self.fields['offers'].queryset = models.IshareBundlePrice.objects.all()
         elif status == "Agent":
             self.fields['offers'].queryset = models.AgentIshareBundlePrice.objects.all()
-        # elif status == "Super Agent":
-        #     self.fields['offers'].queryset = models.SuperAgentIshareBundlePrice.objects.all()
+        elif status == "Super Agent":
+            self.fields['offers'].queryset = models.SuperAgentIshareBundlePrice.objects.all()
         # self.fields['size'].queryset = models.Size.objects.filter(domain=domain)
 
 
@@ -48,8 +48,8 @@ class MTNForm(forms.Form):
             self.fields['offers'].queryset = models.MTNBundlePrice.objects.all()
         elif status == "Agent":
             self.fields['offers'].queryset = models.AgentMTNBundlePrice.objects.all()
-        # elif status == "Super Agent":
-        #     self.fields['offers'].queryset = models.SuperAgentMTNBundlePrice.objects.all()
+        elif status == "Super Agent":
+            self.fields['offers'].queryset = models.SuperAgentMTNBundlePrice.objects.all()
         # self.fields['size'].queryset = models.Size.objects.filter(domain=domain)
 
 
@@ -66,8 +66,8 @@ class TelecelForm(forms.Form):
             self.fields['offers'].queryset = models.TelecelBundlePrice.objects.all()
         elif status == "Agent":
             self.fields['offers'].queryset = models.AgentTelecelBundlePrice.objects.all()
-        # elif status == "Super Agent":
-        #     self.fields['offers'].queryset = models.SuperAgentTelecelBundlePrice.objects.all()
+        elif status == "Super Agent":
+            self.fields['offers'].queryset = models.SuperAgentTelecelBundlePrice.objects.all()
         # self.fields['size'].queryset = models.Size.objects.filter(domain=domain)
 
 
@@ -96,8 +96,8 @@ class BigTimeBundleForm(forms.Form):
             self.fields['offers'].queryset = models.BigTimeBundlePrice.objects.all()
         elif status == "Agent":
             self.fields['offers'].queryset = models.AgentBigTimeBundlePrice.objects.all()
-        # elif status == "Super Agent":
-        #     self.fields['offers'].queryset = models.SuperAgentBigTimeBundlePrice.objects.all()
+        elif status == "Super Agent":
+            self.fields['offers'].queryset = models.SuperAgentBigTimeBundlePrice.objects.all()
         # self.fields['size'].queryset = models.Size.objects.filter(domain=domain)
 
 
