@@ -76,7 +76,7 @@ def pay_with_wallet(request):
                 print(num_without_0)
                 receiver_body = {
                     'recipient': f"233{num_without_0}",
-                    'sender_id': 'DATASTOREGH',
+                    'sender_id': 'DANWELSTORE',
                     'message': receiver_message
                 }
 
@@ -85,7 +85,7 @@ def pay_with_wallet(request):
 
                 sms_body = {
                     'recipient': f"233{request.user.phone}",
-                    'sender_id': 'DATASTOREGH',
+                    'sender_id': 'DANWELSTORE',
                     'message': sms_message
                 }
 
@@ -94,11 +94,11 @@ def pay_with_wallet(request):
                 print(response.text)
 
                 # response1 = requests.get(
-                #     f"https://sms.arkesel.com/sms/api?action=send-sms&api_key=OnBuSjBXc1pqN0xrQXIxU1A=&to=0{request.user.phone}&from=DATASTOREGH&sms={sms_message}")
+                #     f"https://sms.arkesel.com/sms/api?action=send-sms&api_key=OnBuSjBXc1pqN0xrQXIxU1A=&to=0{request.user.phone}&from=DANWELSTORE&sms={sms_message}")
                 # print(response1.text)
                 #
                 # response2 = requests.get(
-                #     f"https://sms.arkesel.com/sms/api?action=send-sms&api_key=OnBuSjBXc1pqN0xrQXIxU1A=&to={phone_number}&from=DATASTOREGH&sms={receiver_message}")
+                #     f"https://sms.arkesel.com/sms/api?action=send-sms&api_key=OnBuSjBXc1pqN0xrQXIxU1A=&to={phone_number}&from=DANWELSTORE&sms={receiver_message}")
                 # print(response2.text)
 
                 return JsonResponse({'status': 'Transaction Completed Successfully', 'icon': 'success'})
@@ -184,7 +184,7 @@ def airtel_tigo(request):
                 print(num_without_0)
                 receiver_body = {
                     'recipient': f"233{num_without_0}",
-                    'sender_id': 'DATASTOREGH',
+                    'sender_id': 'DANWELSTORE',
                     'message': receiver_message
                 }
 
@@ -193,7 +193,7 @@ def airtel_tigo(request):
 
                 sms_body = {
                     'recipient': f"233{request.user.phone}",
-                    'sender_id': 'DATASTOREGH',
+                    'sender_id': 'DANWELSTORE',
                     'message': sms_message
                 }
 
@@ -210,7 +210,7 @@ def airtel_tigo(request):
 
                 sms_body = {
                     'recipient': f"233{request.user.phone}",
-                    'sender_id': 'DATASTOREGH',
+                    'sender_id': 'DANWELSTORE',
                     'message': sms_message
                 }
                 response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
@@ -227,7 +227,7 @@ def airtel_tigo(request):
 
             sms_body = {
                 'recipient': f'233{request.user.phone}',
-                'sender_id': 'DATASTOREGH',
+                'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
 
@@ -279,7 +279,7 @@ def mtn_pay_with_wallet(request):
         user.save()
         sms_body = {
             'recipient': f"233{admin}",
-            'sender_id': 'DATASTOREGH',
+            'sender_id': 'DANWELSTORE',
             'message': sms_message
         }
         # response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
@@ -327,7 +327,7 @@ def telecel_pay_with_wallet(request):
         user.save()
         # sms_body = {
         #     'recipient': "233540975553",
-        #     'sender_id': 'DATASTOREGH',
+        #     'sender_id': 'DANWELSTORE',
         #     'message': sms_message
         # }
         # response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
@@ -417,7 +417,7 @@ def mtn(request):
 
         sms_body = {
             'recipient': "233540975553",
-            'sender_id': 'DATASTOREGH',
+            'sender_id': 'DANWELSTORE',
             'message': sms_message
         }
         response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
@@ -476,7 +476,7 @@ def telecel(request):
 
         sms_body = {
             'recipient': "233540975553",
-            'sender_id': 'DATASTOREGH',
+            'sender_id': 'DANWELSTORE',
             'message': sms_message
         }
         response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
@@ -738,7 +738,7 @@ def mark_as_sent(request, pk, status):
 
             sms_body = {
                 'recipient': f"233{txn.bundle_number}",
-                'sender_id': 'DATASTOREGH',
+                'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
             response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
@@ -779,7 +779,7 @@ def telecel_mark_as_sent(request, pk, status):
 
             sms_body = {
                 'recipient': f"233{txn.bundle_number}",
-                'sender_id': 'DATASTOREGH',
+                'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
             response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
@@ -820,7 +820,7 @@ def at_mark_as_sent(request, pk, status):
 
             sms_body = {
                 'recipient': f"233{txn.user.phone}",
-                'sender_id': 'DATASTOREGH',
+                'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
             try:
@@ -866,7 +866,7 @@ def bt_mark_as_sent(request, pk, status):
 
             sms_body = {
                 'recipient': f"233{txn.user.phone}",
-                'sender_id': 'DATASTOREGH',
+                'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
             try:
@@ -917,7 +917,7 @@ def afa_mark_as_sent(request, pk, status):
 
             sms_body = {
                 'recipient': f"233{txn.user.phone}",
-                'sender_id': 'DATASTOREGH',
+                'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
             response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
@@ -954,7 +954,7 @@ def credit_user(request):
 
                 sms_body = {
                     'recipient': f"233{user_needed.phone}",
-                    'sender_id': 'DATASTOREGH',
+                    'sender_id': 'DANWELSTORE',
                     'message': sms_message
                 }
                 response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
@@ -992,7 +992,7 @@ def topup_info(request):
 
         sms_body = {
             'recipient': f"233{admin}",
-            'sender_id': 'DATASTOREGH',
+            'sender_id': 'DANWELSTORE',
             'message': sms_message
         }
 
@@ -1056,7 +1056,7 @@ def credit_user_from_list(request, reference):
 
         sms_body = {
             'recipient': f"233{custom_user.phone}",
-            'sender_id': 'DATASTOREGH',
+            'sender_id': 'DANWELSTORE',
             'message': sms_message
         }
         try:
@@ -1214,7 +1214,7 @@ def hubtel_webhook(request):
                     #
                     #         sms_body = {
                     #             'recipient': f"233{user.phone}",
-                    #             'sender_id': 'DATASTOREGH',
+                    #             'sender_id': 'DANWELSTORE',
                     #             'message': sms_message
                     #         }
                     #         try:
@@ -1332,7 +1332,7 @@ def hubtel_webhook(request):
                     )
                     new_topup.save()
                     response1 = requests.get(
-                        f"https://sms.arkesel.com/sms/api?action=send-sms&api_key=OnBuSjBXc1pqN0xrQXIxU1A=&to=0{user.phone}&from=DATASTOREGH&sms=Your Bestplug wallet has been credited with {amount}. Thank You.")
+                        f"https://sms.arkesel.com/sms/api?action=send-sms&api_key=OnBuSjBXc1pqN0xrQXIxU1A=&to=0{user.phone}&from=DANWELSTORE&sms=Your Bestplug wallet has been credited with {amount}. Thank You.")
                     print(response1.text)
                     return JsonResponse({'status': "Wallet Credited"}, status=200)
                 else:
