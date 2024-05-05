@@ -754,7 +754,7 @@ def mark_as_sent(request, pk, status):
             sms_message = f"{txn.bundle_number} has been credited with {txn.offer}.\nTransaction Reference: {txn.reference}"
 
             sms_body = {
-                'recipient': f"233{txn.bundle_number}",
+                'recipient': f"233{txn.user.phone}",
                 'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
@@ -795,7 +795,7 @@ def telecel_mark_as_sent(request, pk, status):
             sms_message = f"{txn.bundle_number} has been credited with {txn.offer}.\nTransaction Reference: {txn.reference}"
 
             sms_body = {
-                'recipient': f"233{txn.bundle_number}",
+                'recipient': f"233{txn.user.phone}",
                 'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
