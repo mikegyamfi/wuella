@@ -82,14 +82,14 @@ def pay_with_wallet(request):
 
                 num_without_0 = phone_number[1:]
                 print(num_without_0)
-                receiver_body = {
-                    'recipient': f"233{num_without_0}",
-                    'sender_id': 'DANWELSTORE',
-                    'message': receiver_message
-                }
-
-                response = requests.request('POST', url=sms_url, params=receiver_body, headers=sms_headers)
-                print(response.text)
+                # receiver_body = {
+                #     'recipient': f"233{num_without_0}",
+                #     'sender_id': 'DANWELSTORE',
+                #     'message': receiver_message
+                # }
+                #
+                # response = requests.request('POST', url=sms_url, params=receiver_body, headers=sms_headers)
+                # print(response.text)
 
                 sms_body = {
                     'recipient': f"233{request.user.phone}",
