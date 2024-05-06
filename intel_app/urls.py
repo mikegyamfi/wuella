@@ -51,6 +51,8 @@ urlpatterns = [
     path('signup', authViews.sign_up, name='signup'),
     path('logout', authViews.logout_user, name="logout"),
 
+    path("password_reset/", views.password_reset_request, name="password_reset"),
+
 
     ##################################################################################################################
     path('shop/', shopViews.shop_home_collections, name='shop'),

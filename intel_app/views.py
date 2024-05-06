@@ -3,9 +3,12 @@ from datetime import datetime
 
 import pandas as pd
 from decouple import config
+from django.contrib.auth.forms import PasswordResetForm
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponseRedirect
 import requests
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode
 from django.views.decorators.csrf import csrf_exempt
 
 from . import forms
@@ -1364,3 +1367,51 @@ def hubtel_webhook(request):
     else:
         print("not post")
         return JsonResponse({'message': 'Not Found'}, status=404)
+
+
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
+
+def password_reset_request(request):
+    if request.method == "POST":
+        password_reset_form = PasswordResetForm(request.POST)
+        if password_reset_form.is_valid():
+            data = password_reset_form.cleaned_data['email']
+            user = models.CustomUser.objects.filter(email=data).first()
+            current_user = user
+            if user:
+                subject = "Password Reset Requested"
+                email_template_name = "password/password_reset_message.txt"
+                c = {
+                    "name": user.first_name,
+                    "email": user.email,
+                    'domain': 'www.danwelstoregh.com',
+                    'site_name': 'DanWel Store GH',
+                    "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                    "user": user,
+                    'token': default_token_generator.make_token(user),
+                    'protocol': 'https',
+                }
+                email = render_to_string(email_template_name, c)
+
+                sms_headers = {
+                    'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                    'Content-Type': 'application/json'
+                }
+
+                sms_url = 'https://webapp.usmsgh.com/api/sms/send'
+
+                sms_body = {
+                    'recipient': f"233{user.phone}",
+                    'sender_id': 'DANWELSTORE',
+                    'message': email
+                }
+                response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
+                print(response.text)
+                # requests.get(
+                #     f"https://sms.arkesel.com/sms/api?action=send-sms&api_key=UnBzemdvanJyUGxhTlJzaVVQaHk&to=0{current_user.phone}&from=GEO_AT&sms={email}")
+
+                return redirect("/password_reset/done/")
+    password_reset_form = PasswordResetForm()
+    return render(request=request, template_name="password/password_reset.html",
+                  context={"password_reset_form": password_reset_form})
