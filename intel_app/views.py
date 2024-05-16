@@ -761,8 +761,8 @@ def mark_as_sent(request, pk, status):
                 'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
-            response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
-            print(response.text)
+            # response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
+            # print(response.text)
             return redirect('mtn_admin')
 
 
@@ -802,8 +802,8 @@ def telecel_mark_as_sent(request, pk, status):
                 'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
-            response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
-            print(response.text)
+            # response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
+            # print(response.text)
             return redirect('telecel_admin')
 
 
@@ -843,12 +843,7 @@ def at_mark_as_sent(request, pk, status):
                 'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
-            try:
-                response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
-                print(response.text)
-            except:
-                messages.success(request, f"Transaction Completed")
-                return redirect('at_admin')
+
             messages.success(request, f"Transaction Completed")
             return redirect('at_admin')
 
@@ -889,12 +884,7 @@ def bt_mark_as_sent(request, pk, status):
                 'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
-            try:
-                response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
-                print(response.text)
-            except:
-                messages.success(request, f"Transaction Completed")
-                return redirect('bt_admin')
+
             messages.success(request, f"Transaction Completed")
             return redirect('bt_admin')
 
@@ -940,8 +930,8 @@ def afa_mark_as_sent(request, pk, status):
                 'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
-            response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
-            print(response.text)
+            # response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
+            # print(response.text)
             messages.success(request, f"Transaction Completed")
             return redirect('afa_admin')
 
