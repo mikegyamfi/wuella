@@ -21,6 +21,10 @@ from .models import CustomUser
 
 # Create your views here.
 def home(request):
+    if models.Announcement.objects.filter(active=True).exists():
+        announcement = models.Announcement.objects.filter(active=True).first()
+        messages.info(request, announcement.message)
+        return render(request, "layouts/index.html")
     return render(request, "layouts/index.html")
 
 

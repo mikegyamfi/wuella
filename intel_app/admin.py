@@ -76,6 +76,7 @@ admin.site.register(models.TelecelBundlePrice)
 admin.site.register(models.AgentTelecelBundlePrice)
 admin.site.register(models.SuperAgentTelecelBundlePrice)
 admin.site.register(models.TelecelTransaction)
+admin.site.register(models.Announcement)
 
 
 #########################################################################
