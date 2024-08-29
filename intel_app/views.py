@@ -56,13 +56,6 @@ def pay_with_wallet(request):
             bundle = models.IshareBundlePrice.objects.get(price=float(amount)).bundle_volume
 
         print(bundle)
-        send_bundle_response = helper.send_bundle(request.user, phone_number, bundle, reference)
-        try:
-            data = send_bundle_response.json()
-            print(data)
-        except:
-            return JsonResponse({'status': f'Something went wrong'})
-
         sms_headers = {
             'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
             'Content-Type': 'application/json'
@@ -72,6 +65,14 @@ def pay_with_wallet(request):
         ishare_channel = models.AdminInfo.objects.filter().first().ishare_channel
 
         if ishare_channel == "Gyasi":
+            print("did Gyasi")
+            send_bundle_response = helper.send_bundle(request.user, phone_number, bundle, reference)
+            try:
+                data = send_bundle_response.json()
+                print(data)
+            except:
+                return JsonResponse({'status': f'Something went wrong'})
+
             if send_bundle_response.status_code == 200:
                 if data["code"] == "0000":
                     new_transaction = models.IShareBundleTransaction.objects.create(
