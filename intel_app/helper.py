@@ -108,6 +108,26 @@ def send_bundle(user, receiver, bundle_amount, reference):
     # return response
 
 
+def controller_send_bundle(receiver, bundle_amount, reference):
+    url = "https://controller.geosams.com/api/v1/new_transaction"
+    print(receiver, bundle_amount, reference)
+
+    payload = json.dumps({
+        "account_number": receiver,
+        "reference": reference,
+        "bundle_amount": bundle_amount
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': config('TOKEN')
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    print(response.text)
+    return response
+
+
 def verify_paystack_transaction(reference):
     url = f"https://api.paystack.co/transaction/verify/{reference}"
 

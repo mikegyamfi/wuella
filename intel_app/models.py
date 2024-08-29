@@ -42,6 +42,11 @@ class AdminInfo(models.Model):
         ("AT Money", "AT Money")
     )
     payment_channel = models.CharField(max_length=250, choices=choices)
+    ishare_channels_choices = (
+        ("Geosams", "Geosams"),
+        ("Gyasi", "Gyasi")
+    )
+    ishare_channel = models.CharField(max_length=250, choices=ishare_channels_choices, null=True, blank=True, default="Geosams")
     afa_price = models.FloatField(null=True, blank=True)
 
 
