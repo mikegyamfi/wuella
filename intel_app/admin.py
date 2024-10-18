@@ -1,3 +1,4 @@
+import requests
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.shortcuts import redirect, get_object_or_404
@@ -89,7 +90,21 @@ class TopUpRequestAdmin(admin.ModelAdmin):
                 topup_request.status = True
                 topup_request.credited_at = timezone.now()
                 topup_request.save()
+                sms_headers = {
+                    'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                    'Content-Type': 'application/json'
+                }
 
+                sms_url = 'https://webapp.usmsgh.com/api/sms/send'
+                sms_message = f"Your wallet has been credited with GHS{topup_request.amount}."
+
+                sms_body = {
+                    'recipient': f"233{user.phone}",
+                    'sender_id': 'DANWELSTORE',
+                    'message': sms_message
+                }
+                response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
+                print(response.text)
                 self.message_user(request, f"Successfully credited {topup_request.amount} to {user.username}.",
                                   level=messages.SUCCESS)
         except Exception as e:
