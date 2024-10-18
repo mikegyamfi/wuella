@@ -204,6 +204,83 @@ def pay_with_wallet(request):
                 )
                 new_transaction.save()
                 return JsonResponse({'status': 'Something went wrong', 'icon': 'error'})
+        elif ishare_channel == "Value4Moni":
+            send_bundle_response = helper.value_4_moni_send_bundle(phone_number, bundle, reference)
+            try:
+                data = send_bundle_response.json()
+                print(data)
+            except:
+                return JsonResponse({'status': f'Something went wrong'})
+
+            sms_headers = {
+                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Content-Type': 'application/json'
+            }
+
+            sms_url = 'https://webapp.usmsgh.com/api/sms/send'
+            if send_bundle_response.status_code == 200:
+                if data["code"] == "200":
+                    new_transaction = models.IShareBundleTransaction.objects.create(
+                        user=request.user,
+                        bundle_number=phone_number,
+                        offer=f"{bundle}MB",
+                        reference=reference,
+                        transaction_status="Completed"
+                    )
+                    new_transaction.save()
+                    user.wallet -= float(amount)
+                    user.save()
+                    receiver_message = f"Your bundle purchase has been completed successfully. {bundle}MB has been credited to you by {request.user.phone}.\nReference: {reference}\n"
+                    sms_message = f"Hello @{request.user.username}. Your bundle purchase has been completed successfully. {bundle}MB has been credited to {phone_number}.\nReference: {reference}\nCurrent Wallet Balance: {user.wallet}\nThank you for using GH BAY."
+
+                    num_without_0 = phone_number[1:]
+                    print(num_without_0)
+                    receiver_message = f"Your bundle purchase has been completed successfully. {bundle}MB has been credited to you by {request.user.phone}.\nReference: {reference}\n"
+                    sms_message = f"Hello @{request.user.username}. Your bundle purchase has been completed successfully. {bundle}MB has been credited to {phone_number}.\nReference: {reference}\nCurrent Wallet Balance: {user.wallet}\nThank you for using DanWel Store GH.\n\nThe DanWel Store GH"
+
+                    num_without_0 = phone_number[1:]
+                    print(num_without_0)
+                    # receiver_body = {
+                    #     'recipient': f"233{num_without_0}",
+                    #     'sender_id': 'DANWELSTORE',
+                    #     'message': receiver_message
+                    # }
+                    #
+                    # response = requests.request('POST', url=sms_url, params=receiver_body, headers=sms_headers)
+                    # print(response.text)
+
+                    sms_body = {
+                        'recipient': f"233{request.user.phone}",
+                        'sender_id': 'DANWELSTORE',
+                        'message': sms_message
+                    }
+
+                    response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
+
+                    print(response.text)
+
+                    return JsonResponse({'status': 'Transaction Completed Successfully', 'icon': 'success'})
+                else:
+                    new_transaction = models.IShareBundleTransaction.objects.create(
+                        user=request.user,
+                        bundle_number=phone_number,
+                        offer=f"{bundle}MB",
+                        reference=reference,
+                        transaction_status="Failed",
+                        description=data["message"]
+                    )
+                    new_transaction.save()
+                    return JsonResponse({'status': 'Something went wrong', 'icon': 'error'})
+            else:
+                new_transaction = models.IShareBundleTransaction.objects.create(
+                    user=request.user,
+                    bundle_number=phone_number,
+                    offer=f"{bundle}MB",
+                    reference=reference,
+                    transaction_status="Failed"
+                )
+                new_transaction.save()
+                return JsonResponse({'status': 'Something went wrong', 'icon': 'error'})
     return redirect('airtel-tigo')
 
 

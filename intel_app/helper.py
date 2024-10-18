@@ -128,6 +128,28 @@ def controller_send_bundle(receiver, bundle_amount, reference):
     return response
 
 
+def value_4_moni_send_bundle(receiver, bundle_amount, reference):
+    url = "https://www.value4moni.com/api/v1/inititate_transaction"
+
+    # Payload data to send in the request
+    data = {
+        "API_Key": config("VALUE_API_KEY"),
+        "Receiver": str(receiver),
+        "Volume": str(bundle_amount),
+        "Reference": str(reference),
+        "Package_Type": "AirtelTigo"
+    }
+
+    # Make the POST request
+    response = requests.post(url, json=data)
+
+    # Print the response from the server
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {response.json()}")
+
+    return response
+
+
 def verify_paystack_transaction(reference):
     url = f"https://api.paystack.co/transaction/verify/{reference}"
 
