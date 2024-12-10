@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 import pandas as pd
+from django.db import transaction
 from decouple import config
 from django.contrib.auth.forms import PasswordResetForm
 from django.shortcuts import render, redirect
@@ -143,17 +144,18 @@ def pay_with_wallet(request):
 
             sms_url = 'https://webapp.usmsgh.com/api/sms/send'
             if send_bundle_response.status_code == 200:
-                if data["status"] == "Success":
-                    new_transaction = models.IShareBundleTransaction.objects.create(
-                        user=request.user,
-                        bundle_number=phone_number,
-                        offer=f"{bundle}MB",
-                        reference=reference,
-                        transaction_status="Completed"
-                    )
-                    new_transaction.save()
-                    user.wallet -= float(amount)
-                    user.save()
+                if data["code"] == "200":
+                    with transaction.atomic():
+                        new_transaction = models.IShareBundleTransaction.objects.create(
+                            user=request.user,
+                            bundle_number=phone_number,
+                            offer=f"{bundle}MB",
+                            reference=reference,
+                            transaction_status="Completed"
+                        )
+                        new_transaction.save()
+                        user.wallet -= float(amount)
+                        user.save()
                     receiver_message = f"Your bundle purchase has been completed successfully. {bundle}MB has been credited to you by {request.user.phone}.\nReference: {reference}\n"
                     sms_message = f"Hello @{request.user.username}. Your bundle purchase has been completed successfully. {bundle}MB has been credited to {phone_number}.\nReference: {reference}\nCurrent Wallet Balance: {user.wallet}\nThank you for using GH BAY."
 
@@ -179,7 +181,7 @@ def pay_with_wallet(request):
                         'message': sms_message
                     }
 
-                    response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
+                    response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers, timeout=10)
 
                     print(response.text)
 
