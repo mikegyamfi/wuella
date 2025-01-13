@@ -444,22 +444,19 @@ def mtn_pay_with_wallet(request):
             bundle = models.MTNBundlePrice.objects.get(price=float(amount)).bundle_volume
         print(bundle)
         sms_message = f"An order has been placed. {bundle}MB for {phone_number}"
-        new_mtn_transaction = models.MTNTransaction.objects.create(
-            user=request.user,
-            bundle_number=phone_number,
-            offer=f"{bundle}MB",
-            reference=reference,
-        )
-        new_mtn_transaction.save()
-        user.wallet -= float(amount)
-        user.save()
-        sms_body = {
-            'recipient': f"233{admin}",
-            'sender_id': 'DANWELSTORE',
-            'message': sms_message
-        }
-        # response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
-        # print(response.text)
+
+        with transaction.atomic():
+            new_mtn_transaction = models.MTNTransaction.objects.create(
+                user=request.user,
+                bundle_number=phone_number,
+                offer=f"{bundle}MB",
+                reference=reference,
+            )
+            if models.MTNTransaction.objects.filter(reference=reference).exists():
+                return redirect('mtn')
+            new_mtn_transaction.save()
+            user.wallet -= float(amount)
+            user.save()
         return JsonResponse({'status': "Your transaction will be completed shortly", 'icon': 'success'})
     return redirect('mtn')
 
@@ -561,51 +558,51 @@ def mtn(request):
     phone = user.phone
     status = user.status
     form = forms.MTNForm(status=status)
-    reference = helper.ref_generator()
+    reference = helper.mtn_ref_generator()
     user_email = request.user.email
-    if request.method == "POST":
-        payment_reference = request.POST.get("reference")
-        amount_paid = request.POST.get("amount")
-        new_payment = models.Payment.objects.create(
-            user=request.user,
-            reference=payment_reference,
-            amount=amount_paid,
-            transaction_date=datetime.now(),
-            transaction_status="Completed"
-        )
-        new_payment.save()
-        phone_number = request.POST.get("phone")
-        offer = request.POST.get("amount")
-
-        if user.status == "User":
-            bundle = models.MTNBundlePrice.objects.get(price=float(offer)).bundle_volume
-        elif user.status == "Agent":
-            bundle = models.AgentMTNBundlePrice.objects.get(price=float(offer)).bundle_volume
-
-        new_mtn_transaction = models.MTNTransaction.objects.create(
-            user=request.user,
-            bundle_number=phone_number,
-            offer=f"{bundle}MB",
-            reference=payment_reference,
-
-        )
-        new_mtn_transaction.save()
-        sms_headers = {
-            'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
-            'Content-Type': 'application/json'
-        }
-
-        sms_url = 'https://webapp.usmsgh.com/api/sms/send'
-        sms_message = f"An order has been placed. {bundle}MB for {phone_number}"
-
-        sms_body = {
-            'recipient': "233540975553",
-            'sender_id': 'DANWELSTORE',
-            'message': sms_message
-        }
-        response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
-        print(response.text)
-        return JsonResponse({'status': "Your transaction will be completed shortly", 'icon': 'success'})
+    # if request.method == "POST":
+    #     payment_reference = request.POST.get("reference")
+    #     amount_paid = request.POST.get("amount")
+    #     new_payment = models.Payment.objects.create(
+    #         user=request.user,
+    #         reference=payment_reference,
+    #         amount=amount_paid,
+    #         transaction_date=datetime.now(),
+    #         transaction_status="Completed"
+    #     )
+    #     new_payment.save()
+    #     phone_number = request.POST.get("phone")
+    #     offer = request.POST.get("amount")
+    #
+    #     if user.status == "User":
+    #         bundle = models.MTNBundlePrice.objects.get(price=float(offer)).bundle_volume
+    #     elif user.status == "Agent":
+    #         bundle = models.AgentMTNBundlePrice.objects.get(price=float(offer)).bundle_volume
+    #
+    #     new_mtn_transaction = models.MTNTransaction.objects.create(
+    #         user=request.user,
+    #         bundle_number=phone_number,
+    #         offer=f"{bundle}MB",
+    #         reference=payment_reference,
+    #
+    #     )
+    #     new_mtn_transaction.save()
+    #     sms_headers = {
+    #         'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+    #         'Content-Type': 'application/json'
+    #     }
+    #
+    #     sms_url = 'https://webapp.usmsgh.com/api/sms/send'
+    #     sms_message = f"An order has been placed. {bundle}MB for {phone_number}"
+    #
+    #     sms_body = {
+    #         'recipient': "233540975553",
+    #         'sender_id': 'DANWELSTORE',
+    #         'message': sms_message
+    #     }
+    #     response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
+    #     print(response.text)
+    #     return JsonResponse({'status': "Your transaction will be completed shortly", 'icon': 'success'})
     user = models.CustomUser.objects.get(id=request.user.id)
     phone_num = user.phone
 

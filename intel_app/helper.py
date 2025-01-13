@@ -4,6 +4,8 @@ import requests
 from datetime import datetime
 from decouple import config
 
+from intel_app.models import MTNTransaction
+
 ishare_map = {
     2: 50,
     4: 52,
@@ -28,14 +30,58 @@ ishare_map = {
 
 def ref_generator():
     now_time = datetime.now().strftime('%H%M%S')
-    secret = secrets.token_hex(2)
+    secret = secrets.token_hex(10)
 
     return f"{now_time}{secret}".upper()
 
 
+
+
+import random
+import string
+import time
+import hashlib
+
+
+def mtn_ref_generator(length=20):
+    """
+    Generates a unique reference of the format:
+    'X_MTN{<HASHED_PART>}_RAY'
+
+    Uses current time + random characters + SHA-256 hashing to
+    reduce collisions. Checks the database to ensure the reference
+    doesn't already exist.
+    """
+    if length < 15:
+        raise ValueError("Length must be at least 15 characters.")
+
+    while True:
+        # Current time in nanoseconds to ensure (near) uniqueness
+        timestamp = str(int(time.time() * 1e9))
+
+        # Random characters
+        characters = string.ascii_uppercase + string.digits
+        random_part = ''.join(random.choices(characters, k=length - 5))
+
+        # Combine timestamp and random part
+        base_ref = timestamp + random_part
+
+        # Hash the base reference for additional uniqueness
+        hashed_ref = hashlib.sha256(base_ref.encode()).hexdigest()
+        # Take the first `length` characters and uppercase
+        core_reference = hashed_ref[:length].upper()
+
+        # Final format
+        new_ref = f"DAN_MTN{core_reference}WEL"
+
+        # Check if this reference already exists in the database
+        if not MTNTransaction.objects.filter(reference=new_ref).exists():
+            return new_ref
+
+
 def top_up_ref_generator():
     now_time = datetime.now().strftime('%H%M')
-    secret = secrets.token_hex(1)
+    secret = secrets.token_hex(7)
 
     return f"TOPUP-{now_time}{secret}".upper()
 
