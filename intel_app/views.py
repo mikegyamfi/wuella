@@ -420,12 +420,7 @@ def mtn_pay_with_wallet(request):
         print(phone_number)
         print(amount)
         print(reference)
-        sms_headers = {
-            'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
-            'Content-Type': 'application/json'
-        }
 
-        sms_url = 'https://webapp.usmsgh.com/api/sms/send'
         admin = models.AdminInfo.objects.filter().first().phone_number
 
         if user.wallet is None:
@@ -452,8 +447,6 @@ def mtn_pay_with_wallet(request):
                 offer=f"{bundle}MB",
                 reference=reference,
             )
-            if models.MTNTransaction.objects.filter(reference=reference).exists():
-                return redirect('mtn')
             new_mtn_transaction.save()
             user.wallet -= float(amount)
             user.save()
