@@ -47,23 +47,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'intel_app',
-    'django_select2',
     'storages',
 ]
-
-# CACHES = {
-#     # … default cache config and others
-#     "select2": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://127.0.0.1:6379/2",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         }
-#     }
-# }
-#
-# # Tell select2 which cache configuration to use:
-# SELECT2_CACHE_BACKEND = "select2"
 
 JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)
