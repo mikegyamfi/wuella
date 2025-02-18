@@ -17,6 +17,7 @@ from .models import TopUpRequest
 # Register your models here.
 class CustomUserAdmin(ExportActionMixin, UserAdmin):
     list_display = ['first_name', 'last_name', 'username', 'email', 'wallet', 'phone', 'status']
+    search_fields = ['username', 'first_name', 'last_name', 'phone']
 
     fieldsets = (
         *UserAdmin.fieldsets,
