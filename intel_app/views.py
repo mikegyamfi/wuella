@@ -840,9 +840,12 @@ def verify_transaction(request, reference):
 
 
 def change_excel_status(request, status, to_change_to):
+    print("got in here")
     transactions = models.MTNTransaction.objects.filter(
-        transaction_status='Processing').order_by('transaction_date')[:100]
+        transaction_status='Processing')[:100]
+    print(transactions)
     for txn in transactions:
+        print(txn)
         txn.transaction_status = "Completed"
         txn.save()
     messages.success(request, f"Status changed from {status} to {to_change_to}")
