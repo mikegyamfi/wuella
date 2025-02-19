@@ -841,12 +841,13 @@ def verify_transaction(request, reference):
 
 def change_excel_status(request, status, to_change_to):
     transactions = models.MTNTransaction.objects.filter(
-        transaction_status=status) if to_change_to != "Completed" else models.MTNTransaction.objects.filter(
-        transaction_status=status).order_by('transaction_date')[:20]
+        transaction_status='Processing') if to_change_to != "Completed" else models.MTNTransaction.objects.filter(
+        transaction_status='Processing').order_by('transaction_date')[:300]
     for txn in transactions:
-        txn.transaction_status = to_change_to
+        txn.transaction_status = "Completed"
         txn.save()
         if to_change_to == "Completed":
+            print("completed")
             transaction_number = txn.user.phone
             sms_headers = {
                 'Authorization': 'Bearer 1334|wroIm5YnQD6hlZzd8POtLDXxl4vQodCZNorATYGX',
@@ -861,13 +862,9 @@ def change_excel_status(request, status, to_change_to):
                 'sender_id': 'GH BAY',
                 'message': sms_message
             }
-            try:
-                ...
-                # response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
-                # print(response.text)
-            except:
-                messages.success(request, f"Transaction Completed")
-                return redirect('mtn_admin', status=status)
+
+            messages.success(request, f"Transaction Completed")
+            return redirect('mtn_admin', status=status)
         else:
             messages.success(request, f"Status changed from {status} to {to_change_to}")
             return redirect("mtn_admin", status=status)
