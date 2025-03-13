@@ -92,7 +92,7 @@ class TopUpRequestAdmin(admin.ModelAdmin):
                 topup_request.credited_at = timezone.now()
                 topup_request.save()
                 sms_headers = {
-                    'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                    'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                     'Content-Type': 'application/json'
                 }
 

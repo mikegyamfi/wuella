@@ -58,7 +58,7 @@ def pay_with_wallet(request):
 
         print(bundle)
         sms_headers = {
-            'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+            'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
             'Content-Type': 'application/json'
         }
 
@@ -138,7 +138,7 @@ def pay_with_wallet(request):
                 return JsonResponse({'status': f'Something went wrong'})
 
             sms_headers = {
-                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                 'Content-Type': 'application/json'
             }
 
@@ -215,7 +215,7 @@ def pay_with_wallet(request):
                 return JsonResponse({'status': f'Something went wrong'})
 
             sms_headers = {
-                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                 'Content-Type': 'application/json'
             }
 
@@ -333,7 +333,7 @@ def airtel_tigo(request):
         print(data)
 
         sms_headers = {
-            'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+            'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
             'Content-Type': 'application/json'
         }
 
@@ -466,7 +466,7 @@ def telecel_pay_with_wallet(request):
         print(amount)
         print(reference)
         # sms_headers = {
-        #     'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+        #     'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
         #     'Content-Type': 'application/json'
         # }
         #
@@ -582,7 +582,7 @@ def mtn(request):
     #     )
     #     new_mtn_transaction.save()
     #     sms_headers = {
-    #         'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+    #         'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
     #         'Content-Type': 'application/json'
     #     }
     #
@@ -641,7 +641,7 @@ def telecel(request):
         )
         new_mtn_transaction.save()
         sms_headers = {
-            'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+            'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
             'Content-Type': 'application/json'
         }
 
@@ -986,7 +986,7 @@ def mark_as_sent(request, pk, status):
             txn.transaction_status = "Completed"
             txn.save()
             sms_headers = {
-                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                 'Content-Type': 'application/json'
             }
 
@@ -1027,7 +1027,7 @@ def telecel_mark_as_sent(request, pk, status):
             txn.transaction_status = "Completed"
             txn.save()
             sms_headers = {
-                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                 'Content-Type': 'application/json'
             }
 
@@ -1068,7 +1068,7 @@ def at_mark_as_sent(request, pk, status):
             txn.transaction_status = "Completed"
             txn.save()
             sms_headers = {
-                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                 'Content-Type': 'application/json'
             }
 
@@ -1109,7 +1109,7 @@ def bt_mark_as_sent(request, pk, status):
             txn.transaction_status = "Completed"
             txn.save()
             sms_headers = {
-                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                 'Content-Type': 'application/json'
             }
 
@@ -1155,7 +1155,7 @@ def afa_mark_as_sent(request, pk, status):
             txn.transaction_status = "Completed"
             txn.save()
             sms_headers = {
-                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                 'Content-Type': 'application/json'
             }
 
@@ -1192,7 +1192,7 @@ def credit_user(request):
                 print(user_needed.username)
                 messages.success(request, "Crediting Successful")
                 sms_headers = {
-                    'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                    'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                     'Content-Type': 'application/json'
                 }
 
@@ -1230,7 +1230,7 @@ def topup_info(request):
         new_topup_request.save()
 
         sms_headers = {
-            'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+            'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
             'Content-Type': 'application/json'
         }
 
@@ -1294,7 +1294,7 @@ def credit_user_from_list(request, reference):
         crediting.credited_at = datetime.now()
         crediting.save()
         sms_headers = {
-            'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+            'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
             'Content-Type': 'application/json'
         }
 
@@ -1440,7 +1440,7 @@ def hubtel_webhook(request):
                     # print(data)
                     #
                     # sms_headers = {
-                    #     'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                    #     'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                     #     'Content-Type': 'application/json'
                     # }
                     #
@@ -1622,7 +1622,7 @@ def password_reset_request(request):
                 email = render_to_string(email_template_name, c)
 
                 sms_headers = {
-                    'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                    'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                     'Content-Type': 'application/json'
                 }
 

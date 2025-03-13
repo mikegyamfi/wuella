@@ -170,7 +170,7 @@ def checkout(request):
             user.save()
 
             sms_headers = {
-                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                 'Content-Type': 'application/json'
             }
 
@@ -179,7 +179,7 @@ def checkout(request):
 
             sms_body = {
                 'recipient': f"233{order_form.phone}",
-                'sender_id': 'DATASTOREGH',
+                'sender_id': 'DANWEL',
                 'message': sms_message
             }
             try:
@@ -287,7 +287,7 @@ def change_order_status(request, t_no, stat):
             order.status = "Out for Delivery"
             order.save()
             sms_headers = {
-                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                 'Content-Type': 'application/json'
             }
 
@@ -296,7 +296,7 @@ def change_order_status(request, t_no, stat):
 
             sms_body = {
                 'recipient': f"233{order.phone}",
-                'sender_id': 'DATASTOREGH',
+                'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
             try:
@@ -308,7 +308,7 @@ def change_order_status(request, t_no, stat):
             order.status = "Completed"
             order.save()
             sms_headers = {
-                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                 'Content-Type': 'application/json'
             }
 
@@ -317,7 +317,7 @@ def change_order_status(request, t_no, stat):
 
             sms_body = {
                 'recipient': f"233{order.phone}",
-                'sender_id': 'DATASTOREGH',
+                'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
             try:
@@ -329,7 +329,7 @@ def change_order_status(request, t_no, stat):
             order.status = "Canceled"
             order.save()
             sms_headers = {
-                'Authorization': 'Bearer 1320|DMvAzhkgqCGgsuDs6DHcTKnt8xcrFnD48HEiRbvr',
+                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
                 'Content-Type': 'application/json'
             }
 
@@ -338,7 +338,7 @@ def change_order_status(request, t_no, stat):
 
             sms_body = {
                 'recipient': f"233{order.phone}",
-                'sender_id': 'DATASTOREGH',
+                'sender_id': 'DANWELSTORE',
                 'message': sms_message
             }
             try:
