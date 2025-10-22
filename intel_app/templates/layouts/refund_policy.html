@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% include 'inc/header.html' %}
+
+<header>
+  {% include 'inc/header.html' %}
+
+  <div class="container mt-5">
+    <div class="page-banner">
+      <div class="row justify-content-center align-items-center h-100">
+        <div class="col-md-6">
+          <nav aria-label="Breadcrumb">
+            <ul class="breadcrumb justify-content-center py-0 bg-transparent">
+              <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+              <li class="breadcrumb-item active"><a href="{% url 'shop' %}">Shop</a></li>
+              <li class="breadcrumb-item active">Refund Policy</li>
+            </ul>
+          </nav>
+          <h2 class="text-center">DanWel Shop Refund Policy</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="page-section" id="services">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-10">
+
+          <article class="card shadow-sm border-0">
+            <div class="card-body p-4 p-md-5">
+              <h3 class="mb-3">Refund &amp; Return Policy of DANWELSTOREGH</h3>
+              <p class="text-muted mb-4"><strong>Last Updated:</strong> 20th October 2025</p>
+
+              <p>
+                Welcome to <strong>Danwelstoregh</strong>. We appreciate your trust in our products and services.
+                Please read our Refund and Return Policy carefully to understand your rights and responsibilities
+                when shopping with us.
+              </p>
+
+              <hr class="my-4" />
+
+              <h4 class="mt-3">1. Returns Eligibility</h4>
+              <p>We accept returns for eligible items within <strong>7 days</strong> of purchase or delivery.</p>
+              <p class="mb-2">To qualify for a return:</p>
+              <ul>
+                <li>The item must be unused, uninstalled, and in its original packaging.</li>
+                <li>The product must include all manuals, accessories, and proof of purchase (receipt or invoice).</li>
+                <li>Items that show signs of use, installation, or physical damage will not be accepted.</li>
+              </ul>
+
+              <h4 class="mt-4">2. Non-returnable Items</h4>
+              <p>Certain products are not eligible for return or refund, including:</p>
+              <ul>
+                <li>Used or installed appliances (e.g., fridges, freezers, electric cookers, televisions, etc.).</li>
+                <li>Kitchenware that has been used or unsealed.</li>
+                <li>Clearance, sale, or promotional items.</li>
+                <li>Items without original packaging or missing parts.</li>
+              </ul>
+
+              <h4 class="mt-4">3. Damaged or Faulty Items</h4>
+              <p>
+                If an item arrives damaged or defective, you must notify us within <strong>48 hours</strong> of delivery.
+                We will inspect and replace the item or provide a store credit at no extra cost if the damage is confirmed
+                to be from our end.
+              </p>
+              <p class="mb-2"><em>Please note:</em></p>
+              <ul>
+                <li>Damages reported after 48 hours of delivery may not qualify for replacement or refund.</li>
+              </ul>
+
+              <h4 class="mt-4">4. Refunds</h4>
+              <p>Once your returned item is received and inspected, we will notify you of approval or rejection.</p>
+              <p>If approved:</p>
+              <ul>
+                <li>Refunds will be processed within <strong>5–10 business days</strong>.</li>
+                <li>Refunds are issued via the original payment method or store credit, depending on the situation.</li>
+                <li>Delivery and shipping fees are <strong>non-refundable</strong>.</li>
+              </ul>
+
+              <h4 class="mt-4">5. Exchanges</h4>
+              <p>We only replace items that are defective or damaged upon delivery.</p>
+              <p class="mb-2">To request an exchange, contact our customer service team within 48 hours of receiving your order via:</p>
+              <ul class="list-unstyled">
+                <li>📧 <a href="mailto:wwuella777@gmail.com">wwuella777@gmail.com</a></li>
+                <li>📞 <a href="tel:+233541108225">0541108225</a> / <a href="tel:+233551819851">0551819851</a></li>
+              </ul>
+
+              <h4 class="mt-4">6. Inspection Upon Delivery</h4>
+              <p>
+                Customers are encouraged to inspect items thoroughly before signing off with our delivery personnel.
+                Once delivery is confirmed, no refund or exchange will be processed for visible defects or missing accessories.
+              </p>
+
+              <h4 class="mt-4">7. Contact Us</h4>
+              <p>If you have any questions regarding our Refund or Return Policy, please reach out to us via:</p>
+              <ul class="list-unstyled">
+                <li>📧 <a href="mailto:wwuella777@gmail.com">wwuella777@gmail.com</a></li>
+                <li>📞 <a href="tel:+233541108225">0541108225</a> / <a href="tel:+233551819851">0551819851</a></li>
+                <li>🏬 Gbetsile, Michel Camp, Ghana</li>
+              </ul>
+
+              <div class="alert alert-info mt-4 mb-0">
+                <strong>Business Location:</strong> GBETSILE, Ghana
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </div>
+  </div> <!-- .page-section -->
+</main>
+
+{% include 'inc/footer.html' %}
+
+{% endblock %}
+
+{% block scripts %}
+{% endblock scripts %}

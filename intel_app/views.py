@@ -1642,3 +1642,8 @@ def password_reset_request(request):
     password_reset_form = PasswordResetForm()
     return render(request=request, template_name="password/password_reset.html",
                   context={"password_reset_form": password_reset_form})
+
+
+def refund_policy(request):
+    return render(request, "layouts/refund_policy.html")
+

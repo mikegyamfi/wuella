@@ -53,6 +53,7 @@ urlpatterns = [
     path('logout', authViews.logout_user, name="logout"),
 
     path("password_reset/", views.password_reset_request, name="password_reset"),
+    path("refund_policy", views.refund_policy, name="refund_policy"),
 
 
     ##################################################################################################################
