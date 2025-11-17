@@ -18,7 +18,7 @@ class CustomUser(AbstractUser):
     username = models.CharField(max_length=100, null=False, blank=False, unique=True)
     email = models.EmailField(max_length=250, null=False, blank=False)
     phone = models.PositiveIntegerField(null=True, blank=True)
-    wallet = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    wallet = models.DecimalField(max_digits=20, decimal_places=2, default=Decimal("0.00"))
     choices = (
         ("User", "User"),
         ("Agent", "Agent"),
@@ -265,7 +265,7 @@ class SuperAgentMTNBundlePrice(models.Model):
 class Payment(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     reference = models.CharField(max_length=256, null=False, blank=False)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    amount = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     payment_description = models.CharField(max_length=500, null=True, blank=True)
     transaction_status = models.CharField(max_length=256, null=True, blank=True, default="Unfinished")
     transaction_date = models.CharField(max_length=250, null=True, blank=True)
@@ -278,7 +278,7 @@ class Payment(models.Model):
 class TopUpRequest(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     reference = models.CharField(max_length=250, null=False, blank=False)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
     status = models.BooleanField(default=False, blank=False, null=False)
     date = models.DateTimeField(auto_now_add=True)
     credited_at = models.DateTimeField(auto_now_add=True)
