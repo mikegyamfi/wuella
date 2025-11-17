@@ -1872,7 +1872,7 @@ def paystack_webhook(request):
         # if not signature:
         #     return HttpResponseForbidden("Missing signature")
         #
-        # body = request.body
+        body = request.body
         # # Verify HMAC-SHA512 signature
         # import hmac
         # import hashlib
