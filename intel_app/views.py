@@ -1868,22 +1868,22 @@ def paystack_webhook(request):
     """
     if request.method == "POST":
         print("hit teh post part")
-        signature = request.headers.get("x-paystack-signature")
-        if not signature:
-            return HttpResponseForbidden("Missing signature")
-
-        body = request.body
-        # Verify HMAC-SHA512 signature
-        import hmac
-        import hashlib
-        computed = hmac.new(
-            key=settings.PAYSTACK_SECRET_KEY.encode("utf-8"),
-            msg=body,
-            digestmod=hashlib.sha512
-        ).hexdigest()
-
-        if computed != signature:
-            return HttpResponseForbidden("Invalid signature")
+        # signature = request.headers.get("x-paystack-signature")
+        # if not signature:
+        #     return HttpResponseForbidden("Missing signature")
+        #
+        # body = request.body
+        # # Verify HMAC-SHA512 signature
+        # import hmac
+        # import hashlib
+        # computed = hmac.new(
+        #     key=settings.PAYSTACK_SECRET_KEY.encode("utf-8"),
+        #     msg=body,
+        #     digestmod=hashlib.sha512
+        # ).hexdigest()
+        #
+        # if computed != signature:
+        #     return HttpResponseForbidden("Invalid signature")
 
         try:
             payload = json.loads(body.decode("utf-8"))
