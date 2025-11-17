@@ -14,16 +14,23 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='customuser',
             name='wallet',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=10),
+            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=50),
+        ),
+        migrations.AlterField(
+            model_name='order',
+            name='status',
+            field=models.CharField(choices=[('Pending Payment', 'Pending Payment'), ('Processing', 'Processing'),
+                                            ('Out for Delivery', 'Out for Delivery'), ('Completed', 'Completed'),
+                                            ('Canceled', 'Canceled')], default='Processing', max_length=50),
         ),
         migrations.AlterField(
             model_name='payment',
             name='amount',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True),
+            field=models.DecimalField(blank=True, decimal_places=2, max_digits=50, null=True),
         ),
         migrations.AlterField(
             model_name='topuprequest',
             name='amount',
-            field=models.DecimalField(decimal_places=2, max_digits=12),
+            field=models.DecimalField(decimal_places=2, max_digits=50),
         ),
     ]
