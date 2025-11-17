@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
-  {% block content %}
-  {% include 'inc/header.html' %}
+{% block content %}
 
   <header>
     {% include 'inc/header.html' %}
@@ -11,37 +10,154 @@
         <div class="col-md-12 mt-5 mb-5">
           <div class="card shadow product-data mt-5">
             <div class="card-body cart_data">
-                <div class="row">
-                    {% if admin == "Yes" %}
-                    <h5 class="mx-2 mt-2 mb-3">All Orders</h5>
-                    {% else %}
-                    <h5 class="mx-2 mt-2 mb-3">Your Orders</h5>
-                    {% endif %}
-                    <div class="table-responsive">
-                  <table class="table">
-                      <thead>
-                        <tr>
-                            <th>Order Date</th>
-                            <th>Tracking No</th>
-                            <th>Total Price</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for item in orders %}
-                            <tr>
-                                <td style="font-size: 14px">{{item.created_at}}</td>
-                                <td style="font-size: 14px">{{item.tracking_number}}</td>
-                                <td style="font-size: 14px">{{item.total_price}}</td>
-                                <td style="font-size: 14px">{{item.status}}</td>
-                                <td style="font-size: 14px"><a href="{% url 'view_order' t_no=item.tracking_number %}" class="btn btn-sm btn-outline-primary">Details</a></td>
-                            </tr>
-                        {% endfor %}
-                      </tbody>
-                  </table>
+
+                <div class="row mb-2">
+                    <div class="col-md-12">
+                         {% if admin == "Yes" %}
+                            <h5 class="mt-2">All Orders (Admin Dashboard)</h5>
+                        {% else %}
+                            <h5 class="mt-2">Your Orders</h5>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if admin == "Yes" %}
+                <div class="row mb-4 p-3 bg-light rounded border">
+                    <div class="col-md-12">
+                        <form method="GET" action="{% url 'admin_orders' %}" class="row g-3 align-items-end">
+
+                            <div class="col-md-4">
+                                <label class="small text-muted mb-1">Search</label>
+                                <input type="text" name="search" class="form-control" placeholder="Name, Phone or Ref..." value="{{ current_search|default:'' }}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="small text-muted mb-1">Status</label>
+                                <select name="status" class="form-select form-control">
+                                    <option value="">All Statuses</option>
+                                    <option value="Pending Payment" {% if current_status == 'Pending Payment' %}selected{% endif %}>Pending Payment</option>
+                                    <option value="Processing" {% if current_status == 'Processing' %}selected{% endif %}>Processing</option>
+                                    <option value="Out for Delivery" {% if current_status == 'Out for Delivery' %}selected{% endif %}>Out for Delivery</option>
+                                    <option value="Completed" {% if current_status == 'Completed' %}selected{% endif %}>Completed</option>
+                                    <option value="Canceled" {% if current_status == 'Canceled' %}selected{% endif %}>Canceled</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="small text-muted mb-1">Payment Mode</label>
+                                <select name="payment_mode" class="form-select form-control">
+                                    <option value="">All Payment Modes</option>
+                                    <option value="Wallet" {% if current_payment == 'Wallet' %}selected{% endif %}>Wallet</option>
+                                    <option value="Paystack" {% if current_payment == 'Paystack' %}selected{% endif %}>Paystack</option>
+                                    <option value="COD" {% if current_payment == 'COD' %}selected{% endif %}>COD</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fa fa-filter"></i> Filter
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="row mt-3 border-top pt-2">
+                            <div class="col-6 d-flex align-items-center">
+                                {% if current_search or current_status or current_payment %}
+                                    <a href="{% url 'admin_orders' %}" class="text-danger small text-decoration-none">
+                                        <i class="fa fa-times"></i> Clear All Filters
+                                    </a>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-6 text-end">
+                                <form action="{% url 'clear_pending_orders' %}" method="POST" onsubmit="return confirm('Are you sure you want to delete ALL old Pending Payment orders? This cannot be undone.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="fa fa-trash"></i> Clear Abandoned Orders
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                         </div>
                 </div>
+                {% endif %}
+                <div class="row">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                          <thead>
+                            <tr class="bg-light">
+                                <th>Date</th>
+                                <th>Tracking No</th>
+                                <th>Customer</th>
+                                <th>Total</th>
+                                <th>Mode</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for item in orders %}
+                                <tr>
+                                    <td style="font-size: 13px">{{item.created_at|date:"M d, Y"}}</td>
+                                    <td style="font-size: 13px" class="fw-bold">{{item.tracking_number}}</td>
+                                    <td style="font-size: 13px">
+                                        {{item.full_name|truncatechars:15}} <br>
+                                        <small class="text-muted">{{item.phone}}</small>
+                                    </td>
+                                    <td style="font-size: 13px">GHS {{item.total_price}}</td>
+                                    <td style="font-size: 13px">{{item.payment_mode}}</td>
+                                    <td style="font-size: 13px">
+                                        {% if item.status == 'Pending Payment' %}
+                                            <span class="badge bg-warning text-dark">Pending Payment</span>
+                                        {% elif item.status == 'Processing' %}
+                                            <span class="badge bg-info text-dark">Processing</span>
+                                        {% elif item.status == 'Out for Delivery' %}
+                                            <span class="badge bg-primary">Out for Delivery</span>
+                                        {% elif item.status == 'Completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif item.status == 'Canceled' %}
+                                            <span class="badge bg-danger">Canceled</span>
+                                        {% else %}
+                                            {{item.status}}
+                                        {% endif %}
+                                    </td>
+                                    <td style="font-size: 13px">
+                                        <a href="{% url 'view_order' t_no=item.tracking_number %}" class="btn btn-sm btn-outline-primary">View</a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="7" class="text-center py-4">No orders found matching your criteria.</td></tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3">
+                        <nav aria-label="Page navigation">
+                          <ul class="pagination justify-content-center">
+                            {% if orders.has_previous %}
+                              <li class="page-item">
+                                <a class="page-link" href="?page=1&status={{current_status}}&search={{current_search}}&payment_mode={{current_payment}}">&laquo; First</a>
+                              </li>
+                              <li class="page-item">
+                                <a class="page-link" href="?page={{ orders.previous_page_number }}&status={{current_status}}&search={{current_search}}&payment_mode={{current_payment}}">Previous</a>
+                              </li>
+                            {% endif %}
+
+                            <li class="page-item disabled"><span class="page-link">Page {{ orders.number }} of {{ orders.paginator.num_pages }}</span></li>
+
+                            {% if orders.has_next %}
+                              <li class="page-item">
+                                <a class="page-link" href="?page={{ orders.next_page_number }}&status={{current_status}}&search={{current_search}}&payment_mode={{current_payment}}">Next</a>
+                              </li>
+                              <li class="page-item">
+                                <a class="page-link" href="?page={{ orders.paginator.num_pages }}&status={{current_status}}&search={{current_search}}&payment_mode={{current_payment}}">Last &raquo;</a>
+                              </li>
+                            {% endif %}
+                          </ul>
+                        </nav>
+                    </div>
+                    </div>
             </div>
           </div>
         </div>
@@ -50,10 +166,8 @@
   </header>
 
   <main>
-
   </main>
 
   {% include 'inc/footer.html' %}
-
 
 {% endblock %}

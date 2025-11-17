@@ -35,6 +35,50 @@ def ref_generator():
     return f"{now_time}{secret}".upper()
 
 
+from datetime import datetime, timezone
+import secrets
+
+CROCKFORD32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"  # no I, L, O, U
+
+EPOCH0 = datetime(2020, 1, 1, tzinfo=timezone.utc)  # custom epoch keeps the number small
+
+
+def _crockford32_encode(n: int) -> str:
+    if n == 0:
+        return "0"
+    out = []
+    while n > 0:
+        n, r = divmod(n, 32)
+        out.append(CROCKFORD32[r])
+    return "".join(reversed(out))
+
+
+def generate_short_ref(length: int = 16) -> str:
+    """
+    16-char Crockford Base32 ref:
+      - 48-bit ms timestamp (since 2020-01-01 UTC)
+      - 32-bit cryptographic randomness
+      => 80 bits ≈ 16 base32 chars (since 16 * 5 = 80)
+    """
+    now_ms = int((datetime.now(timezone.utc) - EPOCH0).total_seconds() * 1000)
+    rand32 = secrets.randbits(32)
+    # combine: timestamp in the high bits, random in the low bits
+    n = (now_ms << 32) | rand32
+    code = _crockford32_encode(n)
+    # pad/clip to exact length
+    if len(code) < length:
+        code = code.rjust(length, "0")
+    elif len(code) > length:
+        code = code[-length:]
+    return code
+
+
+def generate_paystack_ref(prefix: str = "DW") -> str:
+    """
+    Final ref (e.g., 'DW_3F8X0S8AH3W2M7QJ'), total short length.
+    You can change/omit the prefix if you like.
+    """
+    return f"{prefix}_{generate_short_ref(16)}"
 
 
 import random
@@ -207,4 +251,3 @@ def verify_paystack_transaction(reference):
     print(response.json())
 
     return response
-

@@ -118,12 +118,24 @@ class AFARegistrationForm(forms.ModelForm):
 
 class OrderDetailsForm(forms.ModelForm):
     full_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control full_name'}))
-    email = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control order_email'}))
+
+    # CHANGE 1: Add required=False so validation passes if left blank
+    email = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control order_email'})
+    )
+
+    # CHANGE 2: Add required=False
     phone = forms.IntegerField(
-        widget=forms.NumberInput(attrs={'class': 'form-control phone', 'placeholder': '0240000000'}))
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control phone', 'placeholder': '0240000000'})
+    )
+
     address = forms.CharField(required=False, widget=forms.Textarea(
         attrs={'class': 'form-control address', 'placeholder': 'Address', 'id': 'plain', 'cols': 20, 'rows': 4}))
+
     city = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control city'}))
+
     REGIONS_CHOICES = (
         ('Ashanti Region', 'Ashanti Region'),
         ('Brong-Ahafo Region', 'Brong-Ahafo Region'),
@@ -140,8 +152,10 @@ class OrderDetailsForm(forms.ModelForm):
     )
 
     region = forms.CharField(widget=forms.Select(attrs={'class': 'form-control region'}, choices=REGIONS_CHOICES))
+
     message = forms.CharField(required=False, widget=forms.Textarea(
-        attrs={'class': 'form-control message', 'placeholder': 'Message for Vendor', 'id': 'plain', 'cols': 20, 'rows': 4}))
+        attrs={'class': 'form-control message', 'placeholder': 'Message for Vendor', 'id': 'plain', 'cols': 20,
+               'rows': 4}))
 
     class Meta:
         model = models.Order

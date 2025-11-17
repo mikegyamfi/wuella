@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from decimal import Decimal
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -17,7 +18,7 @@ class CustomUser(AbstractUser):
     username = models.CharField(max_length=100, null=False, blank=False, unique=True)
     email = models.EmailField(max_length=250, null=False, blank=False)
     phone = models.PositiveIntegerField(null=True, blank=True)
-    wallet = models.FloatField(null=True, blank=True, default=0.0)
+    wallet = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     choices = (
         ("User", "User"),
         ("Agent", "Agent"),
@@ -36,6 +37,7 @@ class AdminInfo(models.Model):
     phone_number = models.BigIntegerField(null=True, blank=True)
     momo_number = models.PositiveBigIntegerField(null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
+    use_paystack_for_topup = models.BooleanField(default=False)
     choices = (
         ("MTN Mobile Money", "MTN Mobile Money"),
         ("Vodafone Cash", "Vodafone Cash"),
@@ -47,7 +49,8 @@ class AdminInfo(models.Model):
         ("Gyasi", "Gyasi"),
         ("Value4Moni", "Value4Moni")
     )
-    ishare_channel = models.CharField(max_length=250, choices=ishare_channels_choices, null=True, blank=True, default="Geosams")
+    ishare_channel = models.CharField(max_length=250, choices=ishare_channels_choices, null=True, blank=True,
+                                      default="Geosams")
     afa_price = models.FloatField(null=True, blank=True)
 
 
@@ -70,7 +73,7 @@ class AgentIshareBundlePrice(models.Model):
 
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
 
 
@@ -80,7 +83,7 @@ class SuperAgentIshareBundlePrice(models.Model):
 
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
 
 
@@ -90,7 +93,7 @@ class IshareBundlePrice(models.Model):
 
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
 
 
@@ -100,7 +103,7 @@ class AgentBigTimeBundlePrice(models.Model):
 
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
 
 
@@ -110,7 +113,7 @@ class SuperAgentBigTimeBundlePrice(models.Model):
 
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
 
 
@@ -120,7 +123,7 @@ class BigTimeBundlePrice(models.Model):
 
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
 
 
@@ -130,7 +133,7 @@ class AgentTelecelBundlePrice(models.Model):
 
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
 
 
@@ -140,7 +143,7 @@ class SuperAgentTelecelBundlePrice(models.Model):
 
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
 
 
@@ -150,7 +153,7 @@ class TelecelBundlePrice(models.Model):
 
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
 
 
@@ -190,7 +193,7 @@ class AFARegistration(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.phone_number} - {self.gh_card_number}"
-    
+
 
 class MTNTransaction(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -227,16 +230,15 @@ class TelecelTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.bundle_number} - {self.reference}"
-    
+
 
 class MTNBundlePrice(models.Model):
     price = models.FloatField(null=False, blank=False)
     bundle_volume = models.FloatField(null=False, blank=False)
 
-
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
 
 
@@ -244,10 +246,9 @@ class AgentMTNBundlePrice(models.Model):
     price = models.FloatField(null=False, blank=False)
     bundle_volume = models.FloatField(null=False, blank=False)
 
-
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
 
 
@@ -257,14 +258,14 @@ class SuperAgentMTNBundlePrice(models.Model):
 
     def __str__(self):
         if self.bundle_volume >= 1000:
-            return f"GHS{self.price} - {self.bundle_volume/1000}GB"
+            return f"GHS{self.price} - {self.bundle_volume / 1000}GB"
         return f"GHS{self.price} - {self.bundle_volume}MB"
-    
+
 
 class Payment(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     reference = models.CharField(max_length=256, null=False, blank=False)
-    amount = models.FloatField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     payment_description = models.CharField(max_length=500, null=True, blank=True)
     transaction_status = models.CharField(max_length=256, null=True, blank=True, default="Unfinished")
     transaction_date = models.CharField(max_length=250, null=True, blank=True)
@@ -277,7 +278,7 @@ class Payment(models.Model):
 class TopUpRequest(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     reference = models.CharField(max_length=250, null=False, blank=False)
-    amount = models.FloatField(blank=False, null=False)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.BooleanField(default=False, blank=False, null=False)
     date = models.DateTimeField(auto_now_add=True)
     credited_at = models.DateTimeField(auto_now_add=True)
@@ -289,7 +290,6 @@ class Announcement(models.Model):
 
     def __str__(self):
         return self.message
-
 
 
 ####################################################################################
@@ -395,6 +395,7 @@ class Order(models.Model):
     payment_mode = models.CharField(max_length=150, null=True)
     payment_id = models.CharField(max_length=250, null=True, blank=True)
     order_statuses = (
+        ('Pending Payment', 'Pending Payment'),
         ('Processing', 'Processing'),
         ('Out for Delivery', 'Out for Delivery'),
         ('Completed', 'Completed'),
@@ -425,6 +426,3 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.order.tracking_number} - {self.order.user} - {self.order.full_name}"
-
-
-

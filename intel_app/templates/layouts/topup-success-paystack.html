@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% include 'inc/header.html' %}
+
+<header>
+  {% include 'inc/header.html' %}
+  <div class="container mt-5">
+    <div class="page-banner">
+      <div class="row justify-content-center align-items-center h-100">
+        <div class="col-md-8">
+          <nav aria-label="Breadcrumb">
+            <ul class="breadcrumb justify-content-center py-0 bg-transparent">
+              <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'services' %}">Services</a></li>
+              <li class="breadcrumb-item active">Top Up</li>
+            </ul>
+          </nav>
+          <h1 class="text-center">Top-Up Initialized via Paystack</h1>
+          <p class="text-center text-muted mb-0">
+            We redirected you to Paystack to complete payment. Once Paystack confirms it,
+            your wallet will be credited automatically.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="page-section" id="services">
+    <div class="container">
+
+      <div class="text-center">
+        <h2 class="title-section">Payment Details</h2>
+        <div class="divider mx-auto"></div>
+      </div>
+
+      <form action="javascript:void(0);" method="get">
+        <div class="row">
+          <div class="form-group col-md-6">
+            <label>Amount (GHS):</label>
+            <input disabled value="{{ amount }}" class="form-control">
+          </div>
+          <div class="form-group col-md-6">
+            <label>Reference:</label>
+            <input disabled value="{{ reference }}" class="form-control" id="refInput">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="form-group col-md-6">
+            <label>Created At:</label>
+            <input disabled value="{{ created_at|date:'Y-m-d H:i' }}" class="form-control">
+          </div>
+          <div class="form-group col-md-6">
+            <label>Status:</label>
+            <div class="d-flex align-items-center">
+              <span id="statusBadge"
+                    class="badge {% if is_credited %}bg-success{% else %}bg-warning text-dark{% endif %} me-2">
+                {% if is_credited %}Credited{% else %}Awaiting Confirmation{% endif %}
+              </span>
+              <div id="spin" class="spinner-border spinner-border-sm {% if is_credited %}d-none{% endif %}"
+                   role="status" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+
+        {% if admin_name %}
+        <div class="alert alert-info mt-3">
+          <strong>Note:</strong> If you believe you paid but don’t see a credit after a few minutes,
+          kindly contact {{ admin_name }}{% if admin_channel %} ({{ admin_channel }}){% endif %}.
+          We’ll reconcile with the Paystack receipt.
+        </div>
+        {% endif %}
+
+        <div class="mt-4 d-flex gap-2">
+          <a href="{% url 'home' %}" class="btn btn-outline-primary">Go to Home</a>
+          <a href="{% url 'services' %}" class="btn btn-outline-secondary">Back to Services</a>
+        </div>
+      </form>
+
+    </div>
+  </div> <!-- .page-section -->
+</main>
+
+{% include 'inc/footer.html' %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  // simple poller to reflect webhook credit status
+  const ref = document.getElementById('refInput').value;
+  const statusBadge = document.getElementById('statusBadge');
+  const spinner = document.getElementById('spin');
+
+  if (!ref) return;
+
+  let tries = 0;
+  const maxTries = 60; // ~5 minutes if interval=5s
+
+  function setCredited(credited, wallet, creditedAt) {
+    if (credited) {
+      statusBadge.classList.remove('bg-warning', 'text-dark');
+      statusBadge.classList.add('bg-success');
+      statusBadge.textContent = 'Credited';
+      spinner.classList.add('d-none');
+    }
+  }
+
+  function tick() {
+    fetch("{% url 'topup_status_api' 'REF_PLACEHOLDER' %}".replace('REF_PLACEHOLDER', ref), {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === true) {
+        setCredited(true, data.wallet, data.credited_at);
+        return; // stop polling
+      }
+      tries += 1;
+      if (tries < maxTries) setTimeout(tick, 5000);
+      else spinner.classList.add('d-none');
+    })
+    .catch(() => {
+      tries += 1;
+      if (tries < maxTries) setTimeout(tick, 7000);
+      else spinner.classList.add('d-none');
+    });
+  }
+
+  // Only start polling if not already credited on first render
+  const initiallyCredited = "{{ is_credited|yesno:'true,false' }}";
+  if (initiallyCredited !== 'true') {
+    setTimeout(tick, 3000);
+  }
+})();
+</script>
+{% endblock scripts %}

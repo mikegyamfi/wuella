@@ -1,16 +1,24 @@
 import json
+import logging
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 
+import certifi
 import pandas as pd
+from django.conf import settings
 from django.db import transaction
 from decouple import config
 from django.contrib.auth.forms import PasswordResetForm
-from django.shortcuts import render, redirect
-from django.http import JsonResponse, HttpResponseRedirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponseBadRequest, HttpResponse, HttpResponseForbidden
 import requests
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.http import urlsafe_base64_encode
 from django.views.decorators.csrf import csrf_exempt
+from requests import Session
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 from . import forms
 from django.contrib import messages
@@ -42,19 +50,19 @@ def pay_with_wallet(request):
         reference = request.POST.get("reference")
         if user.wallet is None:
             return JsonResponse({'status': f'Your wallet balance is low. Contact the admin to recharge.'})
-        elif user.wallet <= 0 or user.wallet < float(amount):
+        elif user.wallet <= 0 or user.wallet < Decimal(amount):
             return JsonResponse({'status': f'Your wallet balance is low. Contact the admin to recharge.'})
         print(phone_number)
         print(amount)
         print(reference)
         if user.status == "User":
-            bundle = models.IshareBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.IshareBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         elif user.status == "Agent":
-            bundle = models.AgentIshareBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.AgentIshareBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         elif user.status == "Super Agent":
-            bundle = models.SuperAgentIshareBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.SuperAgentIshareBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         else:
-            bundle = models.IshareBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.IshareBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
 
         print(bundle)
         sms_headers = {
@@ -84,7 +92,7 @@ def pay_with_wallet(request):
                         transaction_status="Completed"
                     )
                     new_transaction.save()
-                    user.wallet -= float(amount)
+                    user.wallet -= Decimal(amount)
                     user.save()
                     receiver_message = f"Your bundle purchase has been completed successfully. {bundle}MB has been credited to you by {request.user.phone}.\nReference: {reference}\n"
                     sms_message = f"Hello @{request.user.username}. Your bundle purchase has been completed successfully. {bundle}MB has been credited to {phone_number}.\nReference: {reference}\nCurrent Wallet Balance: {user.wallet}\nThank you for using DanWel Store GH.\n\nThe DanWel Store GH"
@@ -154,7 +162,7 @@ def pay_with_wallet(request):
                             transaction_status="Completed"
                         )
                         new_transaction.save()
-                        user.wallet -= float(amount)
+                        user.wallet -= Decimal(amount)
                         user.save()
                     receiver_message = f"Your bundle purchase has been completed successfully. {bundle}MB has been credited to you by {request.user.phone}.\nReference: {reference}\n"
                     sms_message = f"Hello @{request.user.username}. Your bundle purchase has been completed successfully. {bundle}MB has been credited to {phone_number}.\nReference: {reference}\nCurrent Wallet Balance: {user.wallet}\nThank you for using GH BAY."
@@ -230,7 +238,7 @@ def pay_with_wallet(request):
                         transaction_status="Completed"
                     )
                     new_transaction.save()
-                    user.wallet -= float(amount)
+                    user.wallet -= Decimal(amount)
                     user.save()
                     receiver_message = f"Your bundle purchase has been completed successfully. {bundle}MB has been credited to you by {request.user.phone}.\nReference: {reference}\n"
                     sms_message = f"Hello @{request.user.username}. Your bundle purchase has been completed successfully. {bundle}MB has been credited to {phone_number}.\nReference: {reference}\nCurrent Wallet Balance: {user.wallet}\nThank you for using GH BAY."
@@ -311,8 +319,8 @@ def airtel_tigo(request):
         offer = request.POST.get("amount")
         print(offer)
         bundle = models.IshareBundlePrice.objects.get(
-            price=float(offer)).bundle_volume if user.status == "User" else models.AgentIshareBundlePrice.objects.get(
-            price=float(offer)).bundle_volume
+            price=Decimal(offer)).bundle_volume if user.status == "User" else models.AgentIshareBundlePrice.objects.get(
+            price=Decimal(offer)).bundle_volume
 
         new_transaction = models.IShareBundleTransaction.objects.create(
             user=request.user,
@@ -426,17 +434,17 @@ def mtn_pay_with_wallet(request):
         if user.wallet is None:
             return JsonResponse(
                 {'status': f'Your wallet balance is low. Contact the admin to recharge. Admin Contact Info: 0{admin}'})
-        elif user.wallet <= 0 or user.wallet < float(amount):
+        elif user.wallet <= 0 or user.wallet < Decimal(amount):
             return JsonResponse(
                 {'status': f'Your wallet balance is low. Contact the admin to recharge. Admin Contact Info: 0{admin}'})
         if user.status == "User":
-            bundle = models.MTNBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.MTNBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         elif user.status == "Agent":
-            bundle = models.AgentMTNBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.AgentMTNBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         elif user.status == "Super Agent":
-            bundle = models.SuperAgentMTNBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.SuperAgentMTNBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         else:
-            bundle = models.MTNBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.MTNBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         print(bundle)
         sms_message = f"An order has been placed. {bundle}MB for {phone_number}"
         print("got here")
@@ -449,7 +457,7 @@ def mtn_pay_with_wallet(request):
                 reference=reference,
             )
             new_mtn_transaction.save()
-            user.wallet -= float(amount)
+            user.wallet -= Decimal(amount)
             user.save()
         return JsonResponse({'status': "Your transaction will be completed shortly", 'icon': 'success'})
     return redirect('mtn')
@@ -475,16 +483,16 @@ def telecel_pay_with_wallet(request):
 
         if user.wallet is None:
             return JsonResponse({'status': f'Your wallet balance is low. Contact the admin to recharge.'})
-        elif user.wallet <= 0 or user.wallet < float(amount):
+        elif user.wallet <= 0 or user.wallet < Decimal(amount):
             return JsonResponse({'status': f'Your wallet balance is low. Contact the admin to recharge.'})
         if user.status == "User":
-            bundle = models.TelecelBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.TelecelBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         elif user.status == "Agent":
-            bundle = models.AgentTelecelBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.AgentTelecelBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         elif user.status == "Super Agent":
-            bundle = models.SuperAgentTelecelBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.SuperAgentTelecelBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         else:
-            bundle = models.TelecelBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.TelecelBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
 
         print(bundle)
         sms_message = f"An order has been placed. {bundle}MB for {phone_number}"
@@ -495,7 +503,7 @@ def telecel_pay_with_wallet(request):
             reference=reference,
         )
         new_telecel_transaction.save()
-        user.wallet -= float(amount)
+        user.wallet -= Decimal(amount)
         user.save()
         # sms_body = {
         #     'recipient': "233540975553",
@@ -521,17 +529,17 @@ def big_time_pay_with_wallet(request):
         if user.wallet is None:
             return JsonResponse(
                 {'status': f'Your wallet balance is low. Contact the admin to recharge.'})
-        elif user.wallet <= 0 or user.wallet < float(amount):
+        elif user.wallet <= 0 or user.wallet < Decimal(amount):
             return JsonResponse(
                 {'status': f'Your wallet balance is low. Contact the admin to recharge.'})
         if user.status == "User":
-            bundle = models.BigTimeBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.BigTimeBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         elif user.status == "Agent":
-            bundle = models.AgentBigTimeBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.AgentBigTimeBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         elif user.status == "Super Agent":
-            bundle = models.SuperAgentBigTimeBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.SuperAgentBigTimeBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         else:
-            bundle = models.BigTimeBundlePrice.objects.get(price=float(amount)).bundle_volume
+            bundle = models.BigTimeBundlePrice.objects.get(price=Decimal(amount)).bundle_volume
         print(bundle)
         new_mtn_transaction = models.BigTimeTransaction.objects.create(
             user=request.user,
@@ -540,7 +548,7 @@ def big_time_pay_with_wallet(request):
             reference=reference,
         )
         new_mtn_transaction.save()
-        user.wallet -= float(amount)
+        user.wallet -= Decimal(amount)
         user.save()
         return JsonResponse({'status': "Your transaction will be completed shortly", 'icon': 'success'})
     return redirect('big_time')
@@ -698,7 +706,7 @@ def afa_registration_wallet(request):
         if user.wallet is None:
             return JsonResponse(
                 {'status': f'Your wallet balance is low. Contact the admin to recharge.'})
-        elif user.wallet <= 0 or user.wallet < float(amount):
+        elif user.wallet <= 0 or user.wallet < Decimal(amount):
             return JsonResponse(
                 {'status': f'Your wallet balance is low. Contact the admin to recharge.'})
 
@@ -712,7 +720,7 @@ def afa_registration_wallet(request):
             date_of_birth=date_of_birth
         )
         new_registration.save()
-        user.wallet -= float(price)
+        user.wallet -= Decimal(price)
         user.save()
         return JsonResponse({'status': "Your transaction will be completed shortly", 'icon': 'success'})
     return redirect('home')
@@ -828,7 +836,7 @@ def verify_transaction(request, reference):
             amount = data["data"]["amount"]
             api_reference = data["data"]["reference"]
             date = data["data"]["paid_at"]
-            real_amount = float(amount) / 100
+            real_amount = Decimal(amount) / 100
             print(status)
             print(real_amount)
             print(api_reference)
@@ -853,7 +861,7 @@ def change_excel_status(request, status, to_change_to):
     return redirect("mtn_admin", status=status)
 
 
-from django.db.models import FloatField
+from django.db.models import FloatField, F
 from django.db.models.functions import Cast, Substr, Length
 
 
@@ -1185,9 +1193,9 @@ def credit_user(request):
                 print(amount)
                 user_needed = models.CustomUser.objects.get(username=user)
                 if user_needed.wallet is None:
-                    user_needed.wallet = float(amount)
+                    user_needed.wallet = Decimal(amount)
                 else:
-                    user_needed.wallet += float(amount)
+                    user_needed.wallet += Decimal(amount)
                 user_needed.save()
                 print(user_needed.username)
                 messages.success(request, "Crediting Successful")
@@ -1214,42 +1222,42 @@ def credit_user(request):
         return redirect('home')
 
 
-@login_required(login_url='login')
-def topup_info(request):
-    if request.method == "POST":
-        admin = models.AdminInfo.objects.filter().first().phone_number
-        user = models.CustomUser.objects.get(id=request.user.id)
-        amount = request.POST.get("amount")
-        print(amount)
-        reference = helper.top_up_ref_generator()
-        new_topup_request = models.TopUpRequest.objects.create(
-            user=request.user,
-            amount=amount,
-            reference=reference,
-        )
-        new_topup_request.save()
-
-        sms_headers = {
-            'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
-            'Content-Type': 'application/json'
-        }
-
-        sms_url = 'https://webapp.usmsgh.com/api/sms/send'
-        sms_message = f"A top up request has been placed.\nGHS{amount} for {user}.\nReference: {reference}"
-
-        sms_body = {
-            'recipient': f"233{admin}",
-            'sender_id': 'DANWELSTORE',
-            'message': sms_message
-        }
-
-        # response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
-        # print(response.text)
-
-        messages.success(request,
-                         f"Your Request has been sent successfully. Kindly go on to pay to {admin} and use the reference stated as reference. Reference: {reference}")
-        return redirect("request_successful", reference)
-    return render(request, "layouts/topup-info.html")
+# @login_required(login_url='login')
+# def topup_info(request):
+#     if request.method == "POST":
+#         admin = models.AdminInfo.objects.filter().first().phone_number
+#         user = models.CustomUser.objects.get(id=request.user.id)
+#         amount = request.POST.get("amount")
+#         print(amount)
+#         reference = helper.top_up_ref_generator()
+#         new_topup_request = models.TopUpRequest.objects.create(
+#             user=request.user,
+#             amount=amount,
+#             reference=reference,
+#         )
+#         new_topup_request.save()
+#
+#         sms_headers = {
+#             'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
+#             'Content-Type': 'application/json'
+#         }
+#
+#         sms_url = 'https://webapp.usmsgh.com/api/sms/send'
+#         sms_message = f"A top up request has been placed.\nGHS{amount} for {user}.\nReference: {reference}"
+#
+#         sms_body = {
+#             'recipient': f"233{admin}",
+#             'sender_id': 'DANWELSTORE',
+#             'message': sms_message
+#         }
+#
+#         # response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
+#         # print(response.text)
+#
+#         messages.success(request,
+#                          f"Your Request has been sent successfully. Kindly go on to pay to {admin} and use the reference stated as reference. Reference: {reference}")
+#         return redirect("request_successful", reference)
+#     return render(request, "layouts/topup-info.html")
 
 
 @login_required(login_url='login')
@@ -1599,6 +1607,7 @@ def hubtel_webhook(request):
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 
+
 def password_reset_request(request):
     if request.method == "POST":
         password_reset_form = PasswordResetForm(request.POST)
@@ -1647,3 +1656,384 @@ def password_reset_request(request):
 def refund_policy(request):
     return render(request, "layouts/refund_policy.html")
 
+
+################################# Paystack Views #############################
+logger = logging.getLogger(__name__)
+
+
+def _to_pesewas(amount_str: str) -> int:
+    """
+    Convert a GHS string (e.g. "10", "10.50") to pesewas (int).
+    Paystack expects smallest currency unit.
+    """
+    try:
+        value = (Decimal(amount_str).quantize(Decimal("0.01"))) * 100
+        if value <= 0:
+            raise ValueError("Amount must be greater than zero.")
+        return int(value)
+    except (InvalidOperation, ValueError) as e:
+        raise ValueError("Invalid amount") from e
+
+
+def _session_with_retries() -> Session:
+    s = Session()
+    retry = Retry(
+        total=5,
+        backoff_factor=0.6,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset(["GET", "POST"]),
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    s.mount("https://", adapter)
+    s.mount("http://", adapter)
+    # Force certifi CA bundle
+    s.verify = certifi.where()
+    s.headers.update({
+        "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    })
+    return s
+
+
+def paystack_initialize(email: str, amount_pesewas: int, reference: str, metadata: dict) -> dict:
+    url = f"{settings.PAYSTACK_BASE_URL}/transaction/initialize"
+
+    # 1. Get and Clean the Secret Key
+    secret_key = getattr(settings, 'PAYSTACK_SECRET_KEY', None)
+
+    # DEBUGGING: Print to console to verify key is loaded (only prints first 8 chars)
+    if secret_key:
+        print(f"DEBUG: Using Key -> {str(secret_key)[:8]}...")
+        secret_key = str(secret_key).strip()  # Remove accidental spaces from .env
+    else:
+        print("DEBUG: PAYSTACK_SECRET_KEY is None or Empty!")
+        raise ValueError("Paystack Secret Key is missing in settings.py")
+
+    # 2. Prepare Headers
+    headers = {
+        "Authorization": f"Bearer {secret_key}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "email": email,
+        "amount": amount_pesewas,
+        "currency": "GHS",
+        "reference": reference,
+        "metadata": metadata or {},
+    }
+
+    if getattr(settings, 'PAYSTACK_CALLBACK_URL', None):
+        payload["callback_url"] = settings.PAYSTACK_CALLBACK_URL
+
+    # 3. Make the request using standard requests.post
+    # Note: We use json=payload which handles Content-Type and dumping automatically,
+    # but since we manually set headers above, using data=json.dumps is safer for legacy compatibility.
+    s = _session_with_retries()
+    # Use 's.post', not 'requests.post'
+    resp = s.post(
+        url,
+        data=json.dumps(payload),
+        # Headers are already in _session_with_retries, but adding them here again doesn't hurt
+        timeout=25,
+        verify = certifi.where()
+    )
+
+    # 4. Handle Response
+    try:
+        data = resp.json()
+    except Exception as e:
+        print(e)
+        logger.error("Paystack init non-JSON response: %s", resp.text[:500])
+        resp.raise_for_status()
+
+    if resp.status_code not in [200, 201] or not data.get("status"):
+        logger.error("Paystack init error: %s %s", resp.status_code, data)
+        # This catches the 401 error and tells you exactly what Paystack said
+        error_msg = data.get("message", "Failed to initialize payment")
+        raise RuntimeError(f"Paystack Error: {error_msg}")
+
+    return data
+
+
+def _record_payment(user, reference, amount_ghs, status, message=None, description=None):
+    """
+    Upsert a Payment row for audit.
+    """
+    models.Payment.objects.update_or_create(
+        user=user,
+        reference=reference,
+        defaults={
+            "amount": Decimal(amount_ghs) if amount_ghs is not None else None,
+            "payment_description": description or "Wallet top-up via Paystack",
+            "transaction_status": status,
+            "transaction_date": timezone.now().isoformat(),
+            "message": (message or "")[:500],
+        },
+    )
+
+
+# ---------- Core views ----------
+
+@login_required(login_url='login')
+def topup_info(request):
+    if request.method == "POST":
+        admin_info = models.AdminInfo.objects.first()
+        if not admin_info:
+            messages.error(request, "Top-up configuration not found. Please contact support.")
+            return redirect("topup_info")
+
+        user = models.CustomUser.objects.get(id=request.user.id)
+        amount_str = (request.POST.get("amount") or "").strip()
+
+        try:
+            # If you add fees, do it here before conversion
+            amount_pesewas = _to_pesewas(amount_str)
+        except ValueError:
+            messages.error(request, "Invalid top-up amount.")
+            return redirect("topup_info")
+
+        # Generate our internal reference for tracing this request end-to-end
+        reference = helper.generate_paystack_ref()
+
+        # Persist a request row immediately
+        topup_req = models.TopUpRequest.objects.create(
+            user=request.user,
+            amount=Decimal(amount_str),
+            reference=reference,
+        )
+
+        # If Paystack is OFF, go with your existing SMS/manual path
+        if not admin_info.use_paystack_for_topup:
+            admin_phone = admin_info.phone_number
+            # (Your SMS code remains commented; leaving as-is)
+            messages.success(
+                request,
+                f"Your request has been sent successfully. Kindly pay to {admin_phone} and use "
+                f"the reference below. Reference: {reference}"
+            )
+            return redirect("request_successful", reference)
+
+        # Paystack path
+        try:
+            meta = {
+                "topup_request_id": topup_req.id,
+                "user_id": user.id,
+                "username": user.username,
+                "purpose": "wallet_topup",
+                "amount_ghs": str(Decimal(amount_str).quantize(Decimal('0.01'))),
+            }
+            init_data = paystack_initialize(
+                email=user.email or "no-email@example.com",
+                amount_pesewas=amount_pesewas,
+                reference=reference,
+                metadata=meta,
+            )
+            auth_url = init_data["data"]["authorization_url"]
+            access_ref = init_data["data"]["reference"]
+            _record_payment(user, access_ref, Decimal(amount_str), status="Initialized", message="Redirect to Paystack")
+            return redirect(auth_url)
+        except Exception as e:
+            logger.exception("Error initializing Paystack: %s", e)
+            messages.error(request, "Unable to start payment. Please try again in a moment.")
+            return redirect("topup-info")
+
+    # GET
+    return render(request, "layouts/topup-info.html")
+
+
+@login_required(login_url='login')
+def paystack_callback(request):
+    """
+    Optional: Paystack will redirect here after user approves payment in-browser.
+    We do NOT finalize credit here—finalization is done in the webhook after signature verification.
+    This simply shows a friendly page based on reference.
+    """
+    reference = request.GET.get("reference") or request.GET.get("trxref")
+    if not reference:
+        return HttpResponseBadRequest("Missing reference")
+
+    # Let the user land on your success page. The wallet credit occurs only via webhook.
+    return redirect("request_successful_paystack", reference)
+
+
+
+@csrf_exempt
+def paystack_webhook(request):
+    print("it was hit")
+    """
+    Webhook endpoint for Paystack events. Verifies signature and credits wallet idempotently.
+    """
+    if request.method == "POST":
+        print("hit teh post part")
+        signature = request.headers.get("x-paystack-signature")
+        if not signature:
+            return HttpResponseForbidden("Missing signature")
+
+        body = request.body
+        # Verify HMAC-SHA512 signature
+        import hmac
+        import hashlib
+        computed = hmac.new(
+            key=settings.PAYSTACK_SECRET_KEY.encode("utf-8"),
+            msg=body,
+            digestmod=hashlib.sha512
+        ).hexdigest()
+
+        if computed != signature:
+            return HttpResponseForbidden("Invalid signature")
+
+        try:
+            payload = json.loads(body.decode("utf-8"))
+        except json.JSONDecodeError:
+            return HttpResponseBadRequest("Invalid JSON")
+
+        event = payload.get("event")
+        data = payload.get("data", {})
+        reference = data.get("reference")
+        metadata = data.get("metadata") or {}
+
+        if event != "charge.success":
+            return JsonResponse({"ok": True})
+
+        # CHECK PURPOSE
+        purpose = metadata.get("purpose")
+
+        # ================= CASE 1: WALLET TOP-UP =================
+        if purpose == "wallet_topup":
+            topup_request_id = metadata.get("topup_request_id")
+            amount_pesewas = data.get("amount")
+            amount_ghs = Decimal(amount_pesewas) / Decimal(100)
+
+            try:
+                with transaction.atomic():
+                    topup = models.TopUpRequest.objects.select_for_update().get(id=topup_request_id)
+
+                    if topup.status:
+                        return JsonResponse({"ok": True, "duplicate": True})
+
+                    # Credit Wallet
+                    models.CustomUser.objects.filter(id=topup.user.id).update(
+                        wallet=F("wallet") + amount_ghs
+                    )
+
+                    topup.status = True
+                    topup.credited_at = timezone.now()
+                    topup.save()
+
+                    _record_payment(topup.user, reference, amount_ghs, "Success", "Wallet Topup")
+
+            except Exception as e:
+                logger.exception("Topup Webhook Error: %s", e)
+                return HttpResponse(status=500)
+
+        # ================= CASE 2: SHOP ORDER =================
+        elif purpose == "shop_order":
+            tracking_number = metadata.get("order_tracking_number")
+
+            try:
+                with transaction.atomic():
+                    # Lock the order row
+                    order = models.Order.objects.select_for_update().get(tracking_number=tracking_number)
+
+                    # Idempotency check
+                    if order.status in ["Processing", "Completed", "Paid"]:
+                        return JsonResponse({"ok": True, "message": "Already processed"})
+
+                    # 1. Update Order
+                    order.payment_id = reference
+                    order.status = "Processing"  # or "Paid"
+                    order.save()
+
+                    # 2. DEDUCT STOCK (This logic moved here from checkout)
+                    order_items = models.OrderItem.objects.filter(order=order)
+                    for item in order_items:
+                        product = item.product
+                        # We reload product to avoid race conditions
+                        product.refresh_from_db()
+                        if product.quantity >= item.quantity:
+                            product.quantity -= item.quantity
+                            product.save()
+                        else:
+                            # Critical: Stock ran out while they were paying
+                            logger.error(f"Order {order.id} paid but product {product.name} OOS")
+                            # You might want to flag this order for manual refund
+
+                    # 3. CLEAR CART
+                    # We find the user's cart and clear it
+                    models.Cart.objects.filter(user=order.user).delete()
+
+                    # 4. RECORD PAYMENT
+                    _record_payment(order.user, reference, order.total_price, "Success", "Shop Order Payment")
+
+                    # 5. SEND SMS (Moved here)
+                    sms_headers = {
+                        'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
+                        'Content-Type': 'application/json'
+                    }
+                    sms_body = {
+                        'recipient': f"233{order.phone}",
+                        'sender_id': 'DANWEL',
+                        'message': f"Order {order.tracking_number} Confirmed! We are processing your delivery."
+                    }
+                    try:
+                        requests.post('https://webapp.usmsgh.com/api/sms/send', json=sms_body, headers=sms_headers,
+                                      timeout=5)
+                    except Exception as e:
+                        print(e)
+                        pass
+
+            except models.Order.DoesNotExist:
+                return HttpResponseBadRequest("Order not found")
+
+        else:
+            logger.warning("Unknown webhook purpose: %s", purpose)
+
+        return JsonResponse({"ok": True})
+    else:
+        return HttpResponse(status=200)
+
+
+@login_required(login_url="login")
+def request_successful_paystack(request, reference: str):
+    """
+    Display a Paystack-specific success/landing page after redirect.
+    NOTE: The actual wallet credit happens in the paystack_webhook after signature verification.
+    This page polls a tiny status endpoint to reflect when crediting is done.
+    """
+    if not reference:
+        return HttpResponseBadRequest("Missing reference.")
+
+    # TopUpRequest should exist because we created it before initializing Paystack
+    topup = get_object_or_404(models.TopUpRequest, reference=reference, user=request.user)
+
+    context = {
+        "reference": topup.reference,
+        "amount": f"{topup.amount:.2f}",
+        "created_at": topup.date,
+        "credited_at": topup.credited_at,
+        "is_credited": bool(topup.status),
+        "admin_name": getattr(models.AdminInfo.objects.first(), "name", ""),
+        "admin_channel": getattr(models.AdminInfo.objects.first(), "payment_channel", ""),
+    }
+    return render(request, "layouts/topup-success-paystack.html", context)
+
+
+@login_required(login_url="login")
+def topup_status_api(request, reference: str):
+    """
+    Small JSON endpoint polled by the Paystack success template to know when the wallet is credited.
+    """
+    if not reference:
+        return HttpResponseBadRequest("Missing reference.")
+
+    topup = get_object_or_404(models.TopUpRequest, reference=reference, user=request.user)
+    return JsonResponse({
+        "reference": topup.reference,
+        "status": bool(topup.status),  # True when credited
+        "credited_at": topup.credited_at.isoformat() if topup.credited_at else None,
+        "wallet": f"{request.user.wallet:.2f}",
+        "server_time": timezone.now().isoformat(),
+    })

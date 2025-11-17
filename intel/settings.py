@@ -17,7 +17,6 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = BASE_DIR / 'intel_app/templates'
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
@@ -31,9 +30,13 @@ DEBUG = True
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'danwel-mgusi.ondigitalocean.app',
-    'www.danwelstoregh.com'
+    'www.danwelstoregh.com',
+    '23f9e6462d08.ngrok-free.app'
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://23f9e6462d08.ngrok-free.app'
+]
 
 # Application definition
 
@@ -95,7 +98,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'intel.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
@@ -105,7 +107,6 @@ WSGI_APPLICATION = 'intel.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
-
 
 DATABASES = {
     'default': {
@@ -139,7 +140,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
@@ -150,7 +150,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
@@ -165,7 +164,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'intel_app/media')
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 AUTH_USER_MODEL = 'intel_app.CustomUser'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
 
@@ -186,6 +184,11 @@ AWS_LOCATION = config("AWS_LOCATION")
 MEDIA_LOCATION = 'media'
 MEDIA_URL = 'https://%s/%s/' % (AWS_S3_ENDPOINT_URL, AWS_LOCATION)
 DEFAULT_FILE_STORAGE = 'custom_storages.MediaStorage'
+
+PAYSTACK_SECRET_KEY = config("PAYSTACK_SECRET_KEY", "")
+PAYSTACK_PUBLIC_KEY = config("PAYSTACK_PUBLIC_KEY", "")
+PAYSTACK_BASE_URL = config("PAYSTACK_BASE_URL", "https://api.paystack.co")
+PAYSTACK_CALLBACK_URL = config("PAYSTACK_CALLBACK_URL", "")
 
 # DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 # MEDIA_URL = '/media/'

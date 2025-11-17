@@ -2,7 +2,8 @@ import hashlib
 import hmac
 import json
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
+from decimal import Decimal
 from time import sleep
 
 import pandas as pd
@@ -10,13 +11,17 @@ from decouple import config
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group, Permission
+from django.core.paginator import Paginator
+from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 import requests
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from intel_app import models, forms
+from intel_app import models, forms, helper
+from intel_app.views import paystack_initialize
 
 
 def shop_home_collections(request):
@@ -126,111 +131,181 @@ def delete_cart_item(request):
 
 @login_required(login_url='login')
 def checkout(request):
-    if request.method == 'POST':
-        print("posted")
-        form = forms.OrderDetailsForm(request.POST)
-        user = models.CustomUser.objects.filter(id=request.user.id).first()
-        if form.is_valid():
-            new_order_items = models.Cart.objects.filter(user=request.user)
-            cart = models.Cart.objects.filter(user=request.user)
-            cart_total_price = 0
-            for item in cart:
-                cart_total_price += item.product.selling_price * item.product_qty
-            print(cart_total_price)
-            print(user.wallet)
-            if user.wallet == 0 or user.wallet is None or cart_total_price > user.wallet:
-                messages.info(request, "Not enough wallet balance")
-                return redirect('checkout')
-            order_form = form.save(commit=False)
-            order_form.payment_mode = "Wallet"
-            ref = 'BP' + str(random.randint(11111111, 99999999))
-            while models.Payment.objects.filter(reference=ref) is None:
-                ref = 'BP' + str(random.randint(11111111, 99999999))
-            current_user = models.CustomUser.objects.filter(id=request.user.id).first()
-            order_form.total_price = cart_total_price
-            order_form.user = current_user
-            order_form.tracking_number = ref
-            order_form.save()
-
-            for item in new_order_items:
-                models.OrderItem.objects.create(
-                    order=order_form,
-                    product=item.product,
-                    tracking_number=order_form.tracking_number,
-                    price=item.product.selling_price,
-                    quantity=item.product_qty
-                )
-                order_product = models.Product.objects.filter(id=item.product_id).first()
-                order_product.quantity -= item.product_qty
-                order_product.save()
-
-            models.Cart.objects.filter(user=request.user).delete()
-
-            user.wallet -= cart_total_price
-            user.save()
-
-            sms_headers = {
-                'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
-                'Content-Type': 'application/json'
-            }
-
-            sms_url = 'https://webapp.usmsgh.com/api/sms/send'
-            sms_message = f"Order Placed Successfully\nYour order with order number {order_form.tracking_number} has been received and is being processed.\nYou will receive a message when your order is Out for Delivery.\nThank you for shopping with DanWelStore Gh"
-
-            sms_body = {
-                'recipient': f"233{order_form.phone}",
-                'sender_id': 'DANWEL',
-                'message': sms_message
-            }
-            try:
-                response = requests.request('POST', url=sms_url, params=sms_body, headers=sms_headers)
-                print(response.text)
-            except:
-                print("Could not send sms message")
-
-            messages.success(request, "Your order has been placed")
-            return redirect('cart')
-        else:
-            messages.error(request, "Invalid Form Submission")
-            return redirect('checkout')
-    raw_cart = models.Cart.objects.filter(user=request.user)
-    for item in raw_cart:
-        print(item.product_qty)
-        print(item.product.quantity)
-        if item.product_qty > item.product.quantity:
-            messages.info(request, f"Only {item.product.quantity} {item.product}(s) are left")
-            return redirect('cart')
-        elif item.product.quantity == 0:
-            messages.info(request, f"{item.product} is out of stock")
-            return redirect('cart')
+    user = models.CustomUser.objects.get(id=request.user.id)
     cart_items = models.Cart.objects.filter(user=request.user)
-    total_price = 0
+
+    # Check if cart is empty
+    if not cart_items.exists():
+        messages.warning(request, "Your cart is empty.")
+        return redirect('shop')
+
+    # 1. Calculate Total (Decimal Safe)
+    cart_total_price = Decimal("0.00")
     for item in cart_items:
-        total_price += item.product.selling_price * item.product_qty
+        # Stock Check
+        if item.product_qty > item.product.quantity:
+            messages.error(request, f"Item {item.product.name} is out of stock or low quantity.")
+            return redirect('cart')
 
-    total_price_paystack = total_price * 100
+        price = Decimal(str(item.product.selling_price))
+        qty = Decimal(item.product_qty)
+        cart_total_price += price * qty
 
-    ref = 'BP' + str(random.randint(11111111, 99999999))
-    while models.Payment.objects.filter(reference=ref) is None:
-        ref = 'BP' + str(random.randint(11111111, 99999999))
-    form = forms.OrderDetailsForm(
-        initial={
-            'full_name': f"{request.user.first_name} {request.user.last_name}",
-            'email': request.user.email,
-            'phone_number': request.user.phone
-        }
-    )
-    user = models.CustomUser.objects.filter(id=request.user.id).first()
-    email = user.email
-    db_user_id = request.user.id
-    context = {'cart_items': cart_items, 'id': db_user_id, 'total_price': total_price, 'amount': total_price_paystack,
-               'ref': ref, 'email': email, 'form': form, 'wallet': user.wallet}
+    if request.method == 'POST':
+        form = forms.OrderDetailsForm(request.POST)
+        payment_mode = request.POST.get('payment_mode')
+
+        if form.is_valid():
+            # ---------------- OPTION A: WALLET PAYMENT ----------------
+            if payment_mode == "Wallet":
+                if user.wallet is None or user.wallet < cart_total_price:
+                    messages.error(request, "Insufficient wallet balance.")
+                    return redirect('checkout')
+
+                try:
+                    with transaction.atomic():
+                        # 1. Deduct Money
+                        user.wallet -= cart_total_price
+                        user.save()
+
+                        # 2. Create Order AND Finalize (Deduct Stock, Clear Cart)
+                        _create_order_and_items(
+                            request, form, cart_items, cart_total_price,
+                            "Wallet", "Completed", finalize=True
+                        )
+
+                    messages.success(request, "Order placed successfully via Wallet!")
+                    return redirect('orders')
+
+                except Exception as e:
+                    print(e)
+                    messages.error(request, "Error processing wallet payment.")
+                    return redirect('checkout')
+
+            # ---------------- OPTION B: PAYSTACK PAYMENT ----------------
+            elif payment_mode == "Paystack":
+                ref = helper.ref_generator()
+
+                try:
+                    # 1. Create Order but DO NOT Finalize (Keep Cart, Keep Stock)
+                    # We set status to 'Pending Payment'
+                    order = _create_order_and_items(
+                        request, form, cart_items, cart_total_price,
+                        "Paystack", "Pending Payment", ref=ref, finalize=False
+                    )
+
+                    # 2. Initialize Paystack
+                    amount_pesewas = int(cart_total_price * 100)
+                    meta = {
+                        "purpose": "shop_order",
+                        "order_tracking_number": order.tracking_number,
+                        "user_id": user.id
+                    }
+
+                    init_data = paystack_initialize(
+                        email=user.email,
+                        amount_pesewas=amount_pesewas,
+                        reference=ref,
+                        metadata=meta
+                    )
+                    return redirect(init_data['data']['authorization_url'])
+
+                except Exception as e:
+                    print(e)
+                    # Since we didn't finalize, the cart and stock are safe.
+                    # We can optionally delete the pending order here if we want,
+                    # or leave it as an "Abandoned Cart" record.
+                    messages.error(request, "Error initializing Paystack. Please try again.")
+                    return redirect('checkout')
+
+            else:
+                messages.error(request, "Please select a valid payment method.")
+                return redirect('checkout')
+        else:
+            messages.error(request, "Invalid details provided.")
+            return redirect('checkout')
+
+    # GET Logic
+    form = forms.OrderDetailsForm(initial={
+        'full_name': f"{request.user.first_name} {request.user.last_name}",
+        'email': request.user.email,
+        'phone_number': request.user.phone
+    })
+
+    context = {
+        'cart_items': cart_items,
+        'total_price': cart_total_price,
+        'form': form,
+        'wallet': user.wallet
+    }
     return render(request, 'shop/checkout.html', context)
+
+
+# Helper function to avoid repeating code
+def _create_order_and_items(request, form, cart_items, total_price, mode, status, ref=None, finalize=False):
+    if not ref:
+        ref = 'DW' + str(random.randint(11111111, 99999999))
+
+    order = form.save(commit=False)
+
+    # Fallback logic for empty fields
+    if not order.email:
+        order.email = request.user.email
+    if not order.phone:
+        order.phone = request.user.phone
+
+    order.user = request.user
+    order.total_price = float(total_price)
+    order.payment_mode = mode
+    order.tracking_number = ref
+    order.status = status
+    order.save()
+
+    # Create Order Items (Snapshot)
+    for item in cart_items:
+        models.OrderItem.objects.create(
+            order=order,
+            product=item.product,
+            tracking_number=ref,
+            price=item.product.selling_price,
+            quantity=item.product_qty
+        )
+
+        # ONLY deduct stock if finalizing immediately (Wallet)
+        if finalize:
+            item.product.quantity -= item.product_qty
+            item.product.save()
+
+    # ONLY clear cart and send SMS if finalizing immediately (Wallet)
+    if finalize:
+        cart_items.delete()
+
+        # Send SMS
+        sms_headers = {
+            'Authorization': 'Bearer 2069|fMiymkKVytFt84w8GNM8vq0zF2UtakVaNZT1RUVWfd642028',
+            'Content-Type': 'application/json'
+        }
+        sms_url = 'https://webapp.usmsgh.com/api/sms/send'
+        sms_message = f"Order Placed Successfully\nYour order {order.tracking_number} is processed.\nThank you for shopping with DanWelStore Gh"
+        sms_body = {
+            'recipient': f"233{order.phone}",
+            'sender_id': 'DANWEL',
+            'message': sms_message
+        }
+        try:
+            requests.post(sms_url, json=sms_body, headers=sms_headers, timeout=5)
+        except:
+            pass
+
+    return order
 
 
 @login_required(login_url='login')
 def orders(request):
-    all_orders = models.Order.objects.filter(user=request.user).order_by('-created_at')
+    # Only show orders that are NOT pending payment
+    all_orders = models.Order.objects.filter(user=request.user) \
+        .exclude(status='Pending Payment') \
+        .order_by('-created_at')
     context = {'orders': all_orders}
     return render(request, 'shop/order-page.html', context)
 
@@ -249,8 +324,42 @@ def view_order(request, t_no):
 @login_required(login_url='login')
 def admin_orders(request):
     if request.user.is_superuser or request.user.is_staff:
-        all_orders = models.Order.objects.all().order_by('-created_at')
-        context = {'orders': all_orders, 'admin': 'Yes'}
+        # 1. Start with all orders
+        orders_list = models.Order.objects.all().order_by('-created_at')
+
+        # 2. Get Filter Parameters from URL
+        status_filter = request.GET.get('status')
+        payment_mode_filter = request.GET.get('payment_mode')
+        search_query = request.GET.get('search')
+
+        # 3. Apply Filters if they exist
+        if status_filter:
+            orders_list = orders_list.filter(status=status_filter)
+
+        if payment_mode_filter:
+            orders_list = orders_list.filter(payment_mode=payment_mode_filter)
+
+        if search_query:
+            # Search by Tracking Number OR Customer Name OR Phone
+            orders_list = orders_list.filter(
+                Q(tracking_number__icontains=search_query) |
+                Q(full_name__icontains=search_query) |
+                Q(phone__icontains=search_query)
+            )
+
+        # 4. Pagination (Show 20 orders per page)
+        paginator = Paginator(orders_list, 20)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context = {
+            'orders': page_obj,  # Pass the paginated object, not the full list
+            'admin': 'Yes',
+            # Pass current filters back to template so they stay selected
+            'current_status': status_filter,
+            'current_payment': payment_mode_filter,
+            'current_search': search_query
+        }
         return render(request, 'shop/order-page.html', context)
     else:
         messages.error(request, "Access Denied")
@@ -351,4 +460,32 @@ def change_order_status(request, t_no, stat):
     else:
         messages.error(request, "Access Denied")
         return redirect('view_order', t_no=t_no)
+
+
+@login_required(login_url='login')
+def clear_pending_orders(request):
+    if request.user.is_superuser or request.user.is_staff:
+        if request.method == "POST":
+            # OPTION 1: Delete ALL Pending orders immediately
+            # deleted_count, _ = models.Order.objects.filter(status="Pending Payment").delete()
+
+            # OPTION 2 (SAFER): Only delete Pending orders created more than 30 mins ago
+            # This prevents deleting an order while a user is currently on the Paystack page
+            time_threshold = timezone.now() - timedelta(minutes=30)
+            deleted_count, _ = models.Order.objects.filter(
+                status="Pending Payment",
+                created_at__lt=time_threshold
+            ).delete()
+
+            if deleted_count > 0:
+                messages.success(request, f"Successfully cleared {deleted_count} abandoned orders.")
+            else:
+                messages.info(request, "No old pending orders found to clear.")
+
+            return redirect('admin_orders')
+        return None
+    else:
+        messages.error(request, "Access Denied")
+        return redirect('shop')
+
 
