@@ -1,1 +1,1 @@
-web: gunicorn intel.wsgi
+web: python manage.py migrate --noinput && gunicorn intel.wsgi
