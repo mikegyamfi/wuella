@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 from . import views
 from .auth import authViews
 from .shop import shopViews
+from .momo_topup import momoViews
 
 urlpatterns = [
                   path('', views.home, name="home"),
@@ -85,6 +86,11 @@ urlpatterns = [
                        name="request_successful_paystack"),
                   path("wallet/topup/status/<str:reference>/", views.topup_status_api, name="topup_status_api"),
                   path('clear-pending-orders/', shopViews.clear_pending_orders, name='clear_pending_orders'),
+
+                  ####### Manual MoMo top-ups (MacroDroid SMS gateway) #########################
+                  # Do NOT change the webhook path casually: it is typed into the phone's macro.
+                  path('momo/webhook/', momoViews.momo_webhook, name='momo_webhook'),
+                  path('wallet/topup/momo/<str:reference>/', momoViews.momo_claim, name='momo_claim'),
 
               ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

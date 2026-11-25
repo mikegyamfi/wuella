@@ -192,3 +192,34 @@ PAYSTACK_CALLBACK_URL = config("PAYSTACK_CALLBACK_URL", "")
 
 # DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 # MEDIA_URL = '/media/'
+
+# ---------------------------------------------------------------------------
+# Manual MoMo top-ups via the MacroDroid SMS gateway (MACRODROID_MOMO_INTEGRATION.md)
+# ---------------------------------------------------------------------------
+# Shared secret the phone sends in the X-Secret-Key header. Generate with:
+#   python -c "import secrets; print(secrets.token_urlsafe(48))"
+# If unset (or shorter than 32 chars) the webhook rejects every request with 403.
+MACRODROID_SECRET = config("MACRODROID_SECRET", default="").strip()
+
+# Minimum accepted secret length. Keep 32 in production; lower (never below 12) only for testing.
+MACRODROID_MIN_SECRET_LENGTH = config("MACRODROID_MIN_SECRET_LENGTH", default=32, cast=int)
+
+# SMS sender names allowed to create claimable alerts (compared ignoring case, spaces, dashes).
+MOMO_ALLOWED_SENDERS = [
+    s.strip() for s in config("MOMO_ALLOWED_SENDERS", default="MobileMoney").split(",") if s.strip()
+]
+
+# Alerts older than this many hours can no longer be claimed by customers (0 = no limit).
+MOMO_CLAIM_WINDOW_HOURS = config("MOMO_CLAIM_WINDOW_HOURS", default=0, cast=int)
+
+# Max failed claim attempts per user per hour before the claim form locks (anti ID-guessing).
+MOMO_MAX_FAILED_CLAIMS_PER_HOUR = config("MOMO_MAX_FAILED_CLAIMS_PER_HOUR", default=8, cast=int)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "intel_app": {"handlers": ["console"], "level": "INFO"},
+    },
+}

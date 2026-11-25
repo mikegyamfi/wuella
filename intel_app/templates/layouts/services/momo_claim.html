@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+  {% block content %}
+
+  <header>
+    {% include 'inc/header.html' %}
+
+    <div class="container mt-5">
+      <div class="page-banner">
+        <div class="row justify-content-center align-items-center h-100">
+          <div class="col-md-6">
+            <nav aria-label="Breadcrumb">
+              <ul class="breadcrumb justify-content-center py-0 bg-transparent">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                <li class="breadcrumb-item active"><a href="{% url 'topup-info' %}">Top Up</a></li>
+                <li class="breadcrumb-item active">Mobile Money</li>
+              </ul>
+            </nav>
+            <h1 class="text-center">Complete Your Top-Up</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-section">
+      <div class="container" style="max-width: 720px;">
+
+        {% if topup.status %}
+          <div class="card mb-4">
+            <div class="card-body text-center">
+              <h4>This top-up is complete</h4>
+              <p>GHS {{ topup.amount }} was added to your wallet.</p>
+              <a href="{% url 'home' %}" class="btn btn-primary">Go Home</a>
+            </div>
+          </div>
+        {% else %}
+
+        <div class="card mb-4">
+          <div class="card-body">
+            <h4>Step 1: Send the money</h4>
+            <p>Using the MoMo menu on your phone, send <strong>GHS {{ topup.amount }}</strong> to:</p>
+            {% if momo_number %}
+              <h3 class="mb-1">{{ momo_number }}</h3>
+              <p class="mb-1">Name: <strong>{{ momo_name }}</strong></p>
+              <p class="mb-2">Network: <strong>{{ momo_channel }}</strong></p>
+            {% else %}
+              <p class="text-danger">The payment number is not set up yet. Please contact support.</p>
+            {% endif %}
+            <p class="small text-muted mb-0">
+              Check that the name matches before you confirm the payment.
+              Your wallet is credited with the exact amount shown in the MoMo SMS.
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h4>Step 2: Enter the Transaction ID</h4>
+            <p>
+              After paying you will get an SMS from MobileMoney. Copy the
+              <strong>Transaction ID</strong> (a long number, usually 10 to 12 digits) and paste it below.
+            </p>
+
+            <form method="POST" action="{% url 'momo_claim' topup.reference %}" id="momo-claim-form">
+              {% csrf_token %}
+              <input type="text" name="transaction_id" class="form-control"
+                     inputmode="numeric" autocomplete="off" maxlength="40"
+                     placeholder="e.g. 73958990227" required>
+              <button type="submit" class="btn btn-primary mt-3" id="momo-claim-btn">Verify &amp; Claim Funds</button>
+            </form>
+
+            <p class="small text-muted mt-3 mb-0">
+              Keep your Transaction ID private. It can only be used once, by the first person who enters it.
+              {% if claim_window_hours %}Claim within {{ claim_window_hours }} hours of paying.{% endif %}
+              If it says not found, wait a minute and try again.
+              Reference: {{ topup.reference }}
+            </p>
+          </div>
+        </div>
+
+        {% endif %}
+
+      </div>
+    </div>
+  </main>
+
+  {% include 'inc/footer.html' %}
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+  (function () {
+    var form = document.getElementById('momo-claim-form');
+    if (!form) return;
+    form.addEventListener('submit', function () {
+      var btn = document.getElementById('momo-claim-btn');
+      btn.disabled = true;
+      btn.textContent = 'Checking...';
+    });
+  })();
+</script>
+{% endblock scripts %}

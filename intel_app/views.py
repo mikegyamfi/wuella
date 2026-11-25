@@ -1783,7 +1783,7 @@ def topup_info(request):
         admin_info = models.AdminInfo.objects.first()
         if not admin_info:
             messages.error(request, "Top-up configuration not found. Please contact support.")
-            return redirect("topup_info")
+            return redirect("topup-info")
 
         user = models.CustomUser.objects.get(id=request.user.id)
         amount_str = (request.POST.get("amount") or "").strip()
@@ -1793,7 +1793,11 @@ def topup_info(request):
             amount_pesewas = _to_pesewas(amount_str)
         except ValueError:
             messages.error(request, "Invalid top-up amount.")
-            return redirect("topup_info")
+            return redirect("topup-info")
+
+        # The AdminInfo "Top-up method" switch decides; the customer's button only
+        # matters when the switch allows both MoMo auto-verify and Paystack.
+        method = admin_info.resolve_topup_method(request.POST.get("method"))
 
         # Generate our internal reference for tracing this request end-to-end
         reference = helper.generate_paystack_ref()
@@ -1805,8 +1809,12 @@ def topup_info(request):
             reference=reference,
         )
 
-        # If Paystack is OFF, go with your existing SMS/manual path
-        if not admin_info.use_paystack_for_topup:
+        # Manual MoMo with automatic SMS matching (MacroDroid gateway)
+        if method == "momo":
+            return redirect("momo_claim", reference=reference)
+
+        # Manual: customer pays, admin credits from the top-up list
+        if method == "manual":
             admin_phone = admin_info.phone_number
             # (Your SMS code remains commented; leaving as-is)
             messages.success(
@@ -1841,7 +1849,12 @@ def topup_info(request):
             return redirect("topup-info")
 
     # GET
-    return render(request, "layouts/topup-info.html")
+    admin_info = models.AdminInfo.objects.first()
+    context = {
+        "paystack_enabled": bool(admin_info and admin_info.paystack_topup_enabled),
+        "momo_enabled": bool(admin_info and admin_info.momo_topup_enabled),
+    }
+    return render(request, "layouts/topup-info.html", context)
 
 
 @login_required(login_url='login')

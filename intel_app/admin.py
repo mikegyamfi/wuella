@@ -148,6 +148,19 @@ class TopUpRequestAdmin(admin.ModelAdmin):
     credit_selected_users.short_description = "Credit selected top-up requests"
 
 
+class AdminInfoAdmin(admin.ModelAdmin):
+    list_display = ['name', 'momo_number', 'payment_channel', 'topup_method']
+    list_display_links = ['name']
+    list_editable = ['topup_method']  # flip the top-up switch straight from the list page
+    fieldsets = (
+        ('Wallet top-up switch', {'fields': ('topup_method',)}),
+        ('Business / MoMo details (shown to customers)', {
+            'fields': ('name', 'momo_number', 'payment_channel', 'phone_number', 'email'),
+        }),
+        ('Other', {'fields': ('ishare_channel', 'afa_price')}),
+    )
+
+
 class ProductImageInline(admin.TabularInline):  # or admin.StackedInline
     model = models.ProductImage
     extra = 4  # Set the number of empty forms to display
@@ -164,7 +177,7 @@ admin.site.register(models.MTNTransaction, MTNTransactionAdmin)
 admin.site.register(models.IshareBundlePrice)
 admin.site.register(models.MTNBundlePrice)
 admin.site.register(models.Payment, PaymentAdmin)
-admin.site.register(models.AdminInfo)
+admin.site.register(models.AdminInfo, AdminInfoAdmin)
 admin.site.register(models.TopUpRequest, TopUpRequestAdmin)
 admin.site.register(models.AgentIshareBundlePrice)
 admin.site.register(models.AgentMTNBundlePrice)
@@ -190,3 +203,86 @@ admin.site.register(models.OrderItem)
 admin.site.register(models.Order)
 admin.site.register(models.Brand)
 admin.site.register(models.ProductImage),
+
+
+#########################################################################
+# Manual MoMo top-ups (MacroDroid SMS gateway)
+#########################################################################
+
+@admin.register(models.MobileMoneyAlert)
+class MobileMoneyAlertAdmin(admin.ModelAdmin):
+    """
+    Audit trail of SMS received from the gateway phone. Tamper-proof on purpose:
+    staff cannot add, edit or delete rows here (a staff member who can add rows can
+    fabricate payments; one who can delete them can hide them). The only changes
+    allowed are the two actions below, which only touch Unclaimed rows.
+    To compensate a customer by hand, credit their wallet separately; leave alerts alone.
+    """
+    list_display = ('transaction_id', 'amount_display', 'status_badge', 'sender_address',
+                    'claimed_by', 'claimed_at', 'created_at')
+    list_filter = ('status', 'sender_address', 'created_at', 'claimed_at')
+    search_fields = ('transaction_id', 'raw_sms_body', 'claimed_by__username', 'claimed_by__email',
+                     'topup_request__reference')
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
+    list_select_related = ('claimed_by',)
+    actions = ['mark_as_expired', 'mark_as_ignored']
+
+    readonly_fields = ('raw_sms_body', 'sender_address', 'received_at_phone', 'ignore_reason',
+                       'transaction_id', 'amount', 'status', 'claimed_by', 'claimed_at',
+                       'topup_request', 'created_at')
+    fieldsets = (
+        ('SMS Data (Source of Truth)', {
+            'fields': ('raw_sms_body', 'sender_address', 'received_at_phone', 'created_at'),
+        }),
+        ('Parsed Transaction', {'fields': ('transaction_id', 'amount', 'status', 'ignore_reason')}),
+        ('Claim Details', {'fields': ('claimed_by', 'claimed_at', 'topup_request')}),
+    )
+
+    @admin.display(description='Amount', ordering='amount')
+    def amount_display(self, obj):
+        return f"GHS {obj.amount}"
+
+    @admin.display(description='Status', ordering='status')
+    def status_badge(self, obj):
+        colors = {'Unclaimed': '#ffc107', 'Claimed': '#28a745', 'Ignored': '#dc3545', 'Expired': '#6c757d'}
+        return format_html(
+            '<span style="background:{};color:white;padding:4px 8px;border-radius:12px;'
+            'font-weight:bold;font-size:11px;">{}</span>',
+            colors.get(obj.status, '#343a40'), obj.status,
+        )
+
+    @admin.action(description="Force expire selected (prevents claiming)", permissions=["change"])
+    def mark_as_expired(self, request, queryset):
+        n = queryset.filter(status=models.MobileMoneyAlert.STATUS_UNCLAIMED).update(
+            status=models.MobileMoneyAlert.STATUS_EXPIRED)
+        self.message_user(request, f"Marked {n} unclaimed alert(s) as Expired.")
+
+    @admin.action(description="Mark selected as Ignored (junk / test SMS)", permissions=["change"])
+    def mark_as_ignored(self, request, queryset):
+        n = queryset.filter(status=models.MobileMoneyAlert.STATUS_UNCLAIMED).update(
+            status=models.MobileMoneyAlert.STATUS_IGNORED, ignore_reason='Ignored by staff')
+        self.message_user(request, f"Marked {n} unclaimed alert(s) as Ignored.")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(models.MoMoClaimAttempt)
+class MoMoClaimAttemptAdmin(admin.ModelAdmin):
+    list_display = ('user', 'entered_transaction_id', 'outcome', 'successful', 'ip_address', 'created_at')
+    list_filter = ('successful', 'outcome', 'created_at')
+    search_fields = ('user__username', 'entered_transaction_id', 'ip_address', 'topup_request__reference')
+    date_hierarchy = 'created_at'
+    list_select_related = ('user',)
+    readonly_fields = ('user', 'topup_request', 'entered_transaction_id', 'successful', 'outcome',
+                       'ip_address', 'created_at')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

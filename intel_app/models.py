@@ -37,7 +37,45 @@ class AdminInfo(models.Model):
     phone_number = models.BigIntegerField(null=True, blank=True)
     momo_number = models.PositiveBigIntegerField(null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
-    use_paystack_for_topup = models.BooleanField(default=False)
+    # ---- Wallet top-up switch: ONE place that decides how customers top up ----
+    TOPUP_MANUAL = "manual"
+    TOPUP_MACRODROID = "macrodroid"
+    TOPUP_PAYSTACK = "paystack"
+    TOPUP_MACRODROID_PAYSTACK = "macrodroid_paystack"
+    TOPUP_METHOD_CHOICES = (
+        (TOPUP_MANUAL, "Manual - customer pays, admin credits from the top-up list"),
+        (TOPUP_MACRODROID, "MoMo auto-verify - customer enters SMS Transaction ID (MacroDroid)"),
+        (TOPUP_PAYSTACK, "Paystack checkout"),
+        (TOPUP_MACRODROID_PAYSTACK, "Customer chooses: MoMo auto-verify or Paystack"),
+    )
+    topup_method = models.CharField(
+        max_length=30, choices=TOPUP_METHOD_CHOICES, default=TOPUP_MANUAL,
+        help_text="How customers top up their wallet. Switch to Manual or Paystack if the "
+                  "MacroDroid gateway phone is down.")
+
+    @property
+    def momo_topup_enabled(self):
+        return self.topup_method in (self.TOPUP_MACRODROID, self.TOPUP_MACRODROID_PAYSTACK)
+
+    @property
+    def paystack_topup_enabled(self):
+        return self.topup_method in (self.TOPUP_PAYSTACK, self.TOPUP_MACRODROID_PAYSTACK)
+
+    def resolve_topup_method(self, requested=None):
+        """
+        Turn the customer's button choice ('momo' / 'paystack' / None) into the
+        method actually allowed by the switch: 'momo', 'paystack' or 'manual'.
+        """
+        requested = (requested or "").strip().lower()
+        if requested == "momo" and self.momo_topup_enabled:
+            return "momo"
+        if requested == "paystack" and self.paystack_topup_enabled:
+            return "paystack"
+        if self.momo_topup_enabled:
+            return "momo"
+        if self.paystack_topup_enabled:
+            return "paystack"
+        return "manual"
     choices = (
         ("MTN Mobile Money", "MTN Mobile Money"),
         ("Vodafone Cash", "Vodafone Cash"),
@@ -426,3 +464,78 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.order.tracking_number} - {self.order.user} - {self.order.full_name}"
+
+
+####################################################################################
+# Manual Mobile Money top-ups via the MacroDroid SMS gateway
+# (see MACRODROID_MOMO_INTEGRATION.md)
+####################################################################################
+
+class MobileMoneyAlert(models.Model):
+    """
+    A raw SMS forwarded by the Android MacroDroid gateway phone.
+
+    This table is the audit trail proving "the telco said this money arrived".
+    Rows are never created or deleted from the admin (see admin.py).
+    """
+    STATUS_UNCLAIMED = 'Unclaimed'
+    STATUS_CLAIMED = 'Claimed'
+    STATUS_IGNORED = 'Ignored'
+    STATUS_EXPIRED = 'Expired'
+    STATUS_CHOICES = (
+        (STATUS_UNCLAIMED, 'Unclaimed'),
+        (STATUS_CLAIMED, 'Claimed'),
+        (STATUS_IGNORED, 'Ignored'),  # not a claimable payment (OTP, promo, wrong sender, unreadable amount)
+        (STATUS_EXPIRED, 'Expired'),  # force-killed by staff or past the claim window
+    )
+
+    # Raw payload forwarded by the phone, kept verbatim for audit
+    raw_sms_body = models.TextField()
+    sender_address = models.CharField(max_length=50, blank=True)
+    received_at_phone = models.CharField(max_length=100, blank=True)
+    ignore_reason = models.CharField(max_length=100, blank=True)
+
+    # Parsed values. transaction_id is NULL for Ignored rows; NULLs don't clash on unique.
+    transaction_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+
+    # Claim state
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_UNCLAIMED, db_index=True)
+    claimed_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='momo_alerts')
+    claimed_at = models.DateTimeField(null=True, blank=True)
+    topup_request = models.OneToOneField(TopUpRequest, on_delete=models.SET_NULL, null=True, blank=True,
+                                         related_name='momo_alert')
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+        verbose_name = 'Mobile Money Alert'
+        verbose_name_plural = 'Mobile Money Alerts'
+
+    def __str__(self):
+        return f"{self.transaction_id or '-'} - GHS {self.amount} ({self.status})"
+
+
+class MoMoClaimAttempt(models.Model):
+    """
+    One row per claim submission. Used to rate-limit Transaction ID guessing
+    (MoMo IDs are roughly sequential, so an attacker who knows their own ID
+    could otherwise try nearby IDs to steal other people's unclaimed payments).
+    """
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='momo_claim_attempts')
+    topup_request = models.ForeignKey(TopUpRequest, on_delete=models.SET_NULL, null=True, blank=True)
+    entered_transaction_id = models.CharField(max_length=100, blank=True)
+    successful = models.BooleanField(default=False)
+    outcome = models.CharField(max_length=100, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+        verbose_name = 'MoMo Claim Attempt'
+        verbose_name_plural = 'MoMo Claim Attempts'
+
+    def __str__(self):
+        return f"{self.user} - {self.entered_transaction_id} - {self.outcome}"
